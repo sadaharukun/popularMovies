@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">PopularMoves</string>
+    <string name="menu_refresh">刷新</string>
+    <string name="menu_setting">设置</string>
+    <string name="popluarmoves">热门电影</string>
+    <string name="moveDetail">电影详情</string>
+    <string name="setting">设置</string>
+    <string name="popularMost">最受欢迎</string>
+    <string name="voteMost">评分最高</string>
+    <string name="pleaseOnline">请先连接网络</string>
+</resources>

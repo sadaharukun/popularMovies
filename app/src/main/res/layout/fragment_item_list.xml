@@ -7,26 +7,27 @@
 
     <TextView
         android:id="@+id/pleaseOnline"
-        android:layout_centerInParent="true"
-        android:textSize="20sp"
-        android:text="@string/pleaseOnline"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="@string/pleaseOnline"
+        android:textSize="20sp" />
 
     <ProgressBar
         android:id="@+id/progressbar"
+        style="?android:attr/progressBarStyleSmall"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        style="?android:attr/progressBarStyleSmall"
-        android:layout_centerInParent="true"/>
+        android:layout_centerInParent="true" />
 
-    <android.support.v7.widget.RecyclerView
-        xmlns:tools="http://schemas.android.com/tools"
+    <android.support.v7.widget.RecyclerView xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/list"
         android:name="yaoxin.example.com.popularmoves.fragment.ItemFragment"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:layoutManager="LinearLayoutManager"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="10dp"
         tools:context="yaoxin.example.com.popularmoves.fragment.ItemFragment"
         tools:listitem="@layout/fragment_item" />
 </RelativeLayout>

@@ -1,4 +1,4 @@
-package yaoxin.example.com.popularmoves.fragment.dummy;
+package yaoxin.example.com.popularmoves.fragment.bean;
 
 import java.io.Serializable;
 
@@ -6,9 +6,28 @@ import java.io.Serializable;
  * Created by yaoxinxin on 2016/11/25.
  */
 
-public class Move extends Object implements Serializable{
+/**
+ * id
+ * originTitle
+ * title
+ * adult
+ * postUrl
+ * backDropUrl
+ * overview
+ * voteAverage
+ * voteCount
+ * releaseDate
+ * popularity
+ * prevueUrl
+ * isCollected
+ * Duration
+ * comments
+ */
+public class Move extends Object implements Serializable {
 
     private int id;
+
+    private String MoveId;
 
     private boolean Adult;
 
@@ -36,7 +55,7 @@ public class Move extends Object implements Serializable{
     /**
      * 得分
      */
-    private double  voteAverage;
+    private double voteAverage;
 
     private int voteCount;
 
@@ -50,12 +69,25 @@ public class Move extends Object implements Serializable{
      */
     private double popularity;
 
+    /**
+     * 评论
+     */
+    private String comment;
+
+    /**
+     * 收藏
+     */
+    private String collected;
+
+    private String genres;
+
+
     public Move() {
     }
 
 
-    public Move(int id, boolean adult, String originTitle, String title, String posterUrl, String backDropUrl, String overView, float voteAverage, int voteCount, String releaseDate, float popularity) {
-        this.id = id;
+    public Move(String id, boolean adult, String originTitle, String title, String posterUrl, String backDropUrl, String overView, float voteAverage, int voteCount, String releaseDate, float popularity) {
+        this.MoveId = id;
         Adult = adult;
         this.originTitle = originTitle;
         this.title = title;
@@ -74,6 +106,14 @@ public class Move extends Object implements Serializable{
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public String getMoveId() {
+        return MoveId;
+    }
+
+    public void setMoveId(String id) {
+        this.MoveId = id;
     }
 
     public boolean isAdult() {
@@ -154,6 +194,30 @@ public class Move extends Object implements Serializable{
 
     public void setPopularity(double popularity) {
         this.popularity = popularity;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getCollected() {
+        return collected;
+    }
+
+    public void setCollected(String collected) {
+        this.collected = collected;
+    }
+
+    public String getGenres() {
+        return genres;
+    }
+
+    public void setGenres(String genres) {
+        this.genres = genres;
     }
 
     @Override

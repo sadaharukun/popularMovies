@@ -6,10 +6,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
@@ -20,7 +24,8 @@ import java.util.List;
 
 import yaoxin.example.com.popularmoves.MainActivity;
 import yaoxin.example.com.popularmoves.R;
-import yaoxin.example.com.popularmoves.fragment.dummy.Move;
+import yaoxin.example.com.popularmoves.SettingActivity;
+import yaoxin.example.com.popularmoves.fragment.bean.Move;
 
 /**
  * A fragment representing a list of Items.
@@ -79,7 +84,7 @@ public class ItemFragment extends Fragment {
     // TODO: Customize parameter initialization
     @SuppressWarnings("unused")
 
-    public static ItemFragment newInstance(String url, String apikey,int columnCount) {
+    public static ItemFragment newInstance(String url, String apikey, int columnCount) {
         ItemFragment fragment = new ItemFragment();
         Bundle args = new Bundle();
         args.putInt(ARG_COLUMN_COUNT, columnCount);
@@ -91,9 +96,49 @@ public class ItemFragment extends Fragment {
     }
 
     @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.itemfragment, menu);
+    }
+
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int itemId = item.getItemId();
+        switch (itemId) {
+            case R.id.menu_refresh:
+                System.out.print("refresh");
+                if (!currentBaseUrl.isEmpty()) {
+                    if (((MainActivity) getActivity()).isOnline()) {
+                        mText.setVisibility(View.GONE);
+                        mProgressBar.setVisibility(View.VISIBLE);
+                        ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
+                        task.execute(currentBaseUrl, apikey);
+                    } else {
+                        mText.setVisibility(View.VISIBLE);
+                        mProgressBar.setVisibility(View.GONE);
+                    }
+                }
+                return true;
+
+            case R.id.menu_setting:
+                Intent intent = new Intent(getActivity(), SettingActivity.class);
+//
+                this.startActivityForResult(intent, REQUEST_CODE);
+//
+                return true;
+        }
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        setHasOptionsMenu(true);
         if (getArguments() != null) {
             mColumnCount = getArguments().getInt(ARG_COLUMN_COUNT);
             base_url = getArguments().getString("base_url");
@@ -111,7 +156,7 @@ public class ItemFragment extends Fragment {
         if (view instanceof RelativeLayout) {
             Context context = view.getContext();
 
-            RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.list) ;
+            RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.list);
             mProgressBar = (ProgressBar) view.findViewById(R.id.progressbar);
             mText = (TextView) view.findViewById(R.id.pleaseOnline);
             if (mColumnCount <= 1) {
@@ -122,33 +167,16 @@ public class ItemFragment extends Fragment {
 
 
 //            recyclerView.setAdapter(new MyItemRecyclerViewAdapter(DummyContent.ITEMS, mListener));
+            recyclerView.setItemAnimator(new DefaultItemAnimator());
+//            recyclerView.addItemDecoration(new );
             mAdapter = new MyItemRecyclerViewAdapter(getActivity(), moves, mListener);
             recyclerView.setAdapter(mAdapter);
 
-
-            ((MainActivity)getActivity()).setRefreshListener(new RefreshListener() {
-                @Override
-                public void refresh() {
-                    System.out.print("refresh");
-                    if(!currentBaseUrl.isEmpty()){
-                        if (((MainActivity) getActivity()).isOnline()) {
-                            mText.setVisibility(View.GONE);
-                            mProgressBar.setVisibility(View.VISIBLE);
-                            ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-                            task.execute(currentBaseUrl, apikey);
-                        }else{
-                            mText.setVisibility(View.VISIBLE);
-                            mProgressBar.setVisibility(View.GONE);
-                        }
-                    }
-                }
-            });
-
-            if(!((MainActivity) getActivity()).isOnline()){
+            if (!((MainActivity) getActivity()).isOnline()) {
                 mProgressBar.setVisibility(View.INVISIBLE);
                 mText.setVisibility(View.VISIBLE);
 //                recyclerView.setVisibility(View.INVISIBLE);
-            }else{
+            } else {
                 mProgressBar.setVisibility(View.VISIBLE);
                 mText.setVisibility(View.GONE);
             }
@@ -209,7 +237,8 @@ public class ItemFragment extends Fragment {
 
         } else {
 
-            //do nothing
+            task = new ParseAsyncTask(handler, getActivity());
+            base_url = ((MainActivity) getActivity()).popularurl;
 
         }
         System.out.println(base_url);

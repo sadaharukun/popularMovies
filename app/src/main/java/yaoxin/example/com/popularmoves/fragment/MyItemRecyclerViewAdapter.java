@@ -15,10 +15,10 @@ import java.util.List;
 
 import yaoxin.example.com.popularmoves.R;
 import yaoxin.example.com.popularmoves.fragment.ItemFragment.OnListFragmentInteractionListener;
-import yaoxin.example.com.popularmoves.fragment.dummy.Move;
+import yaoxin.example.com.popularmoves.fragment.bean.Move;
 
 /**
- * {@link RecyclerView.Adapter} that can display a {@link yaoxin.example.com.popularmoves.fragment.dummy.Move} and makes a call to the
+ * {@link RecyclerView.Adapter} that can display a {@link yaoxin.example.com.popularmoves.fragment.bean.Move} and makes a call to the
  * specified {@link OnListFragmentInteractionListener}.
  * TODO: Replace the implementation with code for your data type.
  */
@@ -26,11 +26,11 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
 
     private String base_url = "https://image.tmdb.org/t/p/w185";
 
-    private  List<Move> mValues;
+    private List<Move> mValues;
     private final OnListFragmentInteractionListener mListener;
     private Context mC;
 
-    public MyItemRecyclerViewAdapter(Context c,List<Move> items, OnListFragmentInteractionListener listener) {
+    public MyItemRecyclerViewAdapter(Context c, List<Move> items, OnListFragmentInteractionListener listener) {
         mValues = items;
         mListener = listener;
         mC = c;
@@ -45,8 +45,9 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        holder.mItem = mValues.get(position);
-        String posturl = base_url + holder.mItem.getPosterUrl();
+        final Move item = mValues.get(position);
+        String posturl = base_url + item.getPosterUrl();
+
         Picasso.with(mC).load(posturl).placeholder(R.mipmap.ic_launcher).into(holder.mPoster, new Callback() {
             @Override
             public void onSuccess() {
@@ -56,7 +57,7 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
             @Override
             public void onError() {
 
-                Log.d("ItemRecyclerViewAdapter","download failed");
+                Log.d("ItemRecyclerViewAdapter", "download failed");
 
             }
         });
@@ -68,7 +69,7 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
                 if (null != mListener) {
                     // Notify the active callbacks interface (the activity, if the
                     // fragment is attached to one) that an item has been selected.
-                    mListener.onLitFragmentInteraction(holder.mItem);
+                    mListener.onLitFragmentInteraction(item);
                 }
             }
         });
@@ -76,25 +77,27 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
 
     @Override
     public int getItemCount() {
-        return mValues== null?0:mValues.size();
+        return mValues == null ? 0 : mValues.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
         public final View mView;
         public ImageView mPoster;
-        public Move mItem;
+        public ImageView mCollected;
+
 
 
         public ViewHolder(View view) {
             super(view);
             mView = view;
-            mPoster = (ImageView) view.findViewById(R.id.move_poster);
+            mPoster = (ImageView) view.findViewById(R.id.movie_poster);
+            mCollected = (ImageView) view.findViewById(R.id.collect);
 
         }
 
         @Override
         public String toString() {
-            return super.toString() ;
+            return super.toString();
         }
     }
 
@@ -103,7 +106,7 @@ public class MyItemRecyclerViewAdapter extends RecyclerView.Adapter<MyItemRecycl
         return mValues;
     }
 
-    public void setmValues(List<Move> values){
+    public void setmValues(List<Move> values) {
         this.mValues = values;
     }
 }

@@ -1,5 +1,7 @@
 package yaoxin.example.com.popularmoves.fragment;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Handler;
@@ -17,7 +19,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import yaoxin.example.com.popularmoves.fragment.dummy.Move;
+import yaoxin.example.com.popularmoves.data.MovieContract;
+import yaoxin.example.com.popularmoves.data.MovieEntry;
+import yaoxin.example.com.popularmoves.fragment.bean.Move;
 
 /**
  * Created by yaoxinxin on 2016/11/25.
@@ -28,6 +32,8 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
     private static final String Log_D = "ParseAsyncTask";
     //    private static final String APIKEY  = "";
     private static final int RESPONSE_OK = 200;
+
+    private static final String BASE_DETAIL_MOVE = "https://api.themoviedb.org/3/movie/language=zh&movieId?api_key=";
 
 
     private Handler mHandler;
@@ -65,8 +71,13 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                     List<Move> result = new ArrayList<>();
                     for (int i = 0; i < array.length(); i++) {
                         Move m = new Move();
-                        JSONObject object = array.getJSONObject(i);
-                        m.setId(object.optInt("id"));
+                        JSONObject object = array.optJSONObject(i);
+                        String moveId = String.valueOf(object.optInt("id"));
+                        m.setMoveId(moveId);
+//                        String detailUrl = BASE_DETAIL_MOVE.replace("movieId", moveId) + apikey;
+//                        URL url2 = new URL(detailUrl);
+//                        HttpURLConnection conn2 = (HttpURLConnection) url2.openConnection();
+//                        int responseCode = conn2.getResponseCode();
                         m.setAdult(object.optBoolean("adult"));
                         m.setBackDropUrl(object.optString("backdrop_path"));
                         m.setOriginTitle(object.optString("original_title"));
@@ -77,9 +88,30 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                         m.setTitle(object.optString("title"));
                         m.setVoteAverage(object.optDouble("vote_average"));
                         m.setVoteCount(object.optInt("vote_count"));
+                        JSONArray json_genres = object.optJSONArray("genre_ids");
+                        StringBuffer stringBuffer = new StringBuffer();
+                        if (json_genres != null) {
+                            for (int j = 0; j < json_genres.length(); j++) {
+//                                JSONObject genre_json = json_genres.getJSONObject(j);
+                                int genre = json_genres.getInt(j);
+                                if (j != json_genres.length() - 1) {
+                                    stringBuffer.append(genre);
+                                    stringBuffer.append("/");
+                                } else {
+                                    stringBuffer.append(genre);
+                                }
+                            }
+                        }
+                        m.setGenres(stringBuffer.toString());
                         result.add(m);
+
                     }
                     Log.d(Log_D, "result.length==" + result.size());
+
+                    /*this is a test about the database*/
+                    save2database(result);
+
+
                     return result;
                 }
             } else {
@@ -104,4 +136,44 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
         super.onPostExecute(moves);
         mHandler.obtainMessage(RESPONSE_OK, moves).sendToTarget();
     }
+
+    private void save2database(List<Move> moves) {
+        ContentResolver resolver = this.c.getContentResolver();
+//        Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, DisplayFragment.CONTRACT_MOVIE_PROJECTIONS, null, null, null);
+//        if (cursor.getColumnCount() > 0) {
+//            return;
+//        }
+        resolver.delete(MovieContract.CONTENT_MOVE_URI, null, null);//先删除所有的数据
+        if (moves != null && moves.size() != 0) {
+            ContentValues[] contentValues = new ContentValues[moves.size()];
+            ContentValues value;
+            for (int i = 0; i < moves.size(); i++) {
+                Move move = moves.get(i);
+//                value.clear();
+                value = new ContentValues();
+                value.put(MovieEntry._ID, i);
+                value.put(MovieEntry.TITLE, move.getTitle());
+                value.put(MovieEntry.MOVIEID, String.valueOf(move.getMoveId()));
+                value.put(MovieEntry.POSTURL, move.getPosterUrl());
+                value.put(MovieEntry.BACKDROPURL, move.getBackDropUrl());
+                value.put(MovieEntry.OVERVIEW, move.getOverView());
+                value.put(MovieEntry.VOTEAVERAGE, move.getVoteAverage());
+                value.put(MovieEntry.REALEASEDATE, move.getReleaseDate());
+                value.put(MovieEntry.COLLECTED, "0");
+                value.put(MovieEntry.GENRES, move.getGenres());
+//                value.put(MovieEntry.COMMENT, "");
+                contentValues[i] = value;
+//                resolver.insert(MovieContract.CONTENT_MOVE_URI, value);
+
+//                System.out.println("数据插入数据库...");
+            }
+            int num = resolver.bulkInsert(MovieContract.CONTENT_MOVE_URI, contentValues);
+            System.out.println("数据插入数据库..." + num);
+
+
+        }
+
+    }
+
+
 }

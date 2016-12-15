@@ -5,17 +5,16 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
+import android.os.PersistableBundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.FrameLayout;
 
+import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.ItemFragment;
 import yaoxin.example.com.popularmoves.fragment.RefreshListener;
-import yaoxin.example.com.popularmoves.fragment.dummy.Move;
+import yaoxin.example.com.popularmoves.fragment.bean.Move;
 
 public class MainActivity extends AppCompatActivity implements ItemFragment.OnListFragmentInteractionListener {
 
@@ -39,7 +38,8 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         setContentView(R.layout.activity_main);
 
         mContentView = (FrameLayout) this.findViewById(R.id.frame_content);
-        ItemFragment fragment = ItemFragment.newInstance(popularurl, apikey, 2);
+//        ItemFragment fragment = ItemFragment.newInstance(popularurl, apikey, 2);
+        DisplayFragment fragment = DisplayFragment.newInstance(popularurl,apikey,2);
         manager = this.getSupportFragmentManager();
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.replace(R.id.frame_content, fragment, ITEMFRAGMENTTAG);
@@ -51,52 +51,67 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         super.onStart();
 
 
+//        Intent intent = new Intent(this, MovieServices.class);
+//        intent.setPackage();
+//        this.startService(intent);
+
     }
 
-//    @Override
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+
+    //    @Override
 //    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 //        super.onActivityResult(requestCode, resultCode, data);
 //        System.out.println("activity onActivityResult");
 //    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        getMenuInflater().inflate(R.menu.itemfragment, menu);
+//        return true;
+//    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//
+//        switch (item.getItemId()) {
+//            case R.id.menu_refresh:
+//                System.out.println("111111111");
+//                if (refreshListener != null) {
+//                    System.out.print("ready to refresh..");
+//                    refreshListener.refresh();
+//                }
+//                return true;
+//
+//            case R.id.menu_setting:
+//                Intent intent = new Intent(this, SettingActivity.class);
+//
+//                this.startActivityForResult(intent, REQUEST_CODE);
+//
+//                return true;
+//        }
+//
+//        return super.onOptionsItemSelected(item);
+//    }
 
-        switch (item.getItemId()) {
-            case R.id.menu_refresh:
-                System.out.println("111111111");
-                if (refreshListener != null) {
-                    System.out.print("ready to refresh..");
-                    refreshListener.refresh();
-                }
-                return true;
-
-            case R.id.menu_setting:
-                Intent intent = new Intent(this, SettingActivity.class);
-
-                this.startActivityForResult(intent, REQUEST_CODE);
-
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        Fragment fragment = getSupportFragmentManager().findFragmentByTag(ITEMFRAGMENTTAG);
-        if (fragment != null) {
-            fragment.onActivityResult(requestCode, resultCode, data);
-        }
-
-    }
+//    @Override
+//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+//        super.onActivityResult(requestCode, resultCode, data);
+//        Fragment fragment = getSupportFragmentManager().findFragmentByTag(ITEMFRAGMENTTAG);
+//        if (fragment != null) {
+//            fragment.onActivityResult(requestCode, resultCode, data);
+//        }
+//
+//    }
 
     @Override
     public void onLitFragmentInteraction(Move item) {

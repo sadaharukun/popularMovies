@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import yaoxin.example.com.popularmoves.DetailActivity;
 import yaoxin.example.com.popularmoves.MovieApplication;
 import yaoxin.example.com.popularmoves.data.MovieContract;
 import yaoxin.example.com.popularmoves.data.MovieEntry;
@@ -130,8 +131,18 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
             String movieId = (String) params[1];
             HttpURLConnection conn = null;
             String path = reviews_url.replace("moveId", movieId) + MovieApplication.APIKEY;
+            Log.i(TAG, "moveId==" + movieId);
+            ContentResolver resolver = mC.getContentResolver();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_REVIEWS_URI, DetailActivity.REVIEWS_PROJECTIONS,
+                    ReviewsEntry.MOVE_ID + "=?", new String[]{movieId}, null);
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    return null;
+                }
+            }
+
             InputStreamReader reader = null;
-            ContentResolver resolver = null;
+
             try {
                 URL url = new URL(path);
                 conn = (HttpURLConnection) url.openConnection();
@@ -147,22 +158,19 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
                     }
 
                     Log.d(TAG, buffer.toString());
-                    resolver = mC.getContentResolver();
                     JSONObject result_json = new JSONObject(buffer.toString());
                     int totalPage = result_json.optInt("total_pages");
                     int totalResult = result_json.optInt("total_results");
                     JSONArray results_array = result_json.optJSONArray("results");
-                    ContentValues values = new ContentValues();
                     ContentValues[] valuesarr = new ContentValues[results_array.length()];
                     for (int i = 0; i < results_array.length(); i++) {
-                        values.clear();
+                        ContentValues values = new ContentValues();
                         JSONObject result = results_array.getJSONObject(i);
                         String authorId = result.optString("id");
                         String author = result.optString("author");
                         String comments = result.optString("content");
                         String authorUrl = result.optString("url");
-                        String moveId = movieId;
-                        values.put(ReviewsEntry._ID, i);
+//                        values.put(ReviewsEntry._ID, i);
                         values.put(ReviewsEntry.AUTHOR_ID, authorId);
                         values.put(ReviewsEntry.AUTHOR, author);
                         values.put(ReviewsEntry.AUTHOR_URL, authorUrl);

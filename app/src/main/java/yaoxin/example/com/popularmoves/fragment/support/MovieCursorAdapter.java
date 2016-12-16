@@ -24,6 +24,8 @@ import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 
 public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.ViewHolder> {
 
+    private static final String TAG = "MovieCursorAdapter";
+
     private String base_url = "https://image.tmdb.org/t/p/w500";
 
     private Context mC;
@@ -60,7 +62,8 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
 
     public int getItemCount() {
         if (mDataValid && mCursor != null) {
-            return mCursor.getColumnCount();
+//            Log.i(TAG, "count = " + mCursor.getColumnCount());
+            return mCursor.getCount();
         } else {
             return 0;
         }
@@ -134,7 +137,7 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
     public void onBindViewHolder(ViewHolder holder, final int position) {
 
         final Cursor cursor = (Cursor) getItem(position);
-        if (cursor != null ) {
+        if (cursor != null) {
             String postUrl = cursor.getString(DisplayFragment.COL_MOVIE_POSTURL);
             System.out.println("postUrl*****" + postUrl);
             holder.imageView.setTag(position);

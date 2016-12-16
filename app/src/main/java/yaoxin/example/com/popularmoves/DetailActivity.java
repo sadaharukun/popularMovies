@@ -21,6 +21,7 @@ import android.widget.ListView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
+import com.ms.square.android.expandabletextview.ExpandableTextView;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
@@ -32,6 +33,9 @@ import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.support.ReviewsAdapter;
 
+/**
+ * 电影详情页
+ */
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
 
     private static final String TAG = "DetailActivity";
@@ -66,6 +70,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private TextView mAverageNum;
 
     private TextView mOverView;
+    private ExpandableTextView expandableTextView;
 
     private ListView mListView;
     private ReviewsAdapter mAdapter;
@@ -119,8 +124,11 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mAverage = (RatingBar) this.findViewById(R.id.voteAverage);
         mAverageNum = (TextView) this.findViewById(R.id.voteAverage_num);
         mCountry = (TextView) this.findViewById(R.id.movie_country);
-        mOverView = (TextView) this.findViewById(R.id.overview);
+//        mOverView = (TextView) this.findViewById(R.id.overview);
         mListView = (ListView) this.findViewById(R.id.reviews);
+
+        expandableTextView = (ExpandableTextView) this.findViewById(R.id.expandableView);
+
         mToolbar.setTitle(getString(R.string.moveDetail));
         setSupportActionBar(mToolbar);
         mToolbar.setNavigationIcon(R.mipmap.back);
@@ -157,16 +165,19 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
                     ContentValues values = new ContentValues();
                     ContentResolver resolver = getContentResolver();
-                    Log.i(TAG, "moveId == " + move.getId());
+                    String movieId = move.getMoveId();
+                    Log.i(TAG, "moveId == " + move.getMoveId());
                     if (FAVORITE.equals(collect)) {
                         values.clear();
                         values.put(MovieEntry.COLLECTED, FAVORITE_ED);
-                        resolver.update(MovieContract.buildMovieUri(move.getId()), values, null, null);
+                        resolver.update(MovieContract.CONTENT_MOVE_URI, values, MovieEntry.MOVIEID + "=?",
+                                new String[]{movieId});
                         ((ImageView) v).setImageResource(R.mipmap.favorite_ed);
                     } else {
                         values.clear();
                         values.put(MovieEntry.COLLECTED, FAVORITE);
-                        resolver.update(MovieContract.buildMovieUri(move.getId()), values, null, null);
+                        resolver.update(MovieContract.CONTENT_MOVE_URI, values, MovieEntry.MOVIEID + "=?",
+                                new String[]{movieId});
                         ((ImageView) v).setImageResource(R.mipmap.favorite);
                     }
 
@@ -203,8 +214,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             mGenre.setText(move.getGenres());
             System.out.println("voteaverage=" + move.getVoteAverage());
             mAverageNum.setText(String.valueOf(move.getVoteAverage()));
-            mOverView.setText(move.getOverView());
+            expandableTextView.setText(move.getOverView());
         }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i(TAG, "ondestroy..");
     }
 
     private void inflateData(Cursor cursor) {
@@ -220,7 +237,10 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
         if (id == REVIEWS_LOADER_ID) {
-            return new CursorLoader(this, MovieContract.CONTENT_REVIEWS_URI, REVIEWS_PROJECTIONS, null, null, null);
+            if (move != null) {
+                return new CursorLoader(this, MovieContract.CONTENT_REVIEWS_URI, REVIEWS_PROJECTIONS,
+                        ReviewsEntry.MOVE_ID + "=?", new String[]{move.getMoveId()}, null);
+            }
         }
         return null;
     }

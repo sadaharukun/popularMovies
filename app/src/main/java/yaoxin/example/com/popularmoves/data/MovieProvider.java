@@ -125,9 +125,9 @@ public class MovieProvider extends ContentProvider {
         //insert into tableName() values();
 //        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
         SQLiteDatabase db = databaseManager.getWritableDatabase();
-        if (mUriMatcher.match(uri) != MOVIE || mUriMatcher.match(uri) != REVIEWS) {
-            throw new IllegalArgumentException("unknown uri error");
-        }
+//        if (mUriMatcher.match(uri) != MOVIE || mUriMatcher.match(uri) != REVIEWS) {
+//            throw new IllegalArgumentException("unknown uri error");
+//        }
 
         switch (mUriMatcher.match(uri)) {
             case MOVIE:
@@ -255,8 +255,7 @@ public class MovieProvider extends ContentProvider {
                 } finally {
                     db.endTransaction();
                 }
-
-
+                mResolver.notifyChange(uri, null);
                 return review_count;
 
             default:

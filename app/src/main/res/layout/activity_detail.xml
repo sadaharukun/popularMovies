@@ -118,26 +118,46 @@
             android:text="country"
             android:textSize="@dimen/text_12_size" />
 
-        <TextView
-            android:id="@+id/overview"
+        <!--overview-->
+        <com.ms.square.android.expandabletextview.ExpandableTextView
+            android:id="@+id/expandableView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/backdrop"
-            android:textColor="#666"
-            android:textSize="12sp"
+            app:animDuration="100"
             app:layout_marginLeftPercent="2%"
             app:layout_marginRightPercent="2%"
-            app:layout_marginTopPercent="5%" />
+            app:layout_marginTopPercent="5%"
+            app:maxCollapsedLines="4">
+
+            <TextView
+                android:id="@id/expandable_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#666"
+                android:textSize="12sp" />
+
+            <ImageButton
+                android:id="@id/expand_collapse"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="right|bottom"
+                android:background="@android:color/transparent"
+                android:padding="5dp" />
+
+        </com.ms.square.android.expandabletextview.ExpandableTextView>
 
 
         <ListView
             android:id="@+id/reviews"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/overview"
+            android:layout_height="0dp"
+            android:layout_below="@id/expandableView"
             android:layout_centerHorizontal="true"
+            android:divider="#FFF"
             android:dividerHeight="5dp"
             android:scrollbars="none"
+            app:layout_heightPercent="40%"
             app:layout_marginLeftPercent="2%"
             app:layout_marginRightPercent="2%"
             app:layout_marginTopPercent="1%">

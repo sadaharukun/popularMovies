@@ -26,6 +26,8 @@ public class MovieEntry implements BaseColumns {
 
     public static final String VOTEAVERAGE = "voteAverage";
 
+    public static final String POPULARITY = "popularity";
+
     public static final String REALEASEDATE = "releaseDate";
 
 //    public static final String COMMENT="comment";
@@ -35,4 +37,11 @@ public class MovieEntry implements BaseColumns {
     public static final String GENRES = "genres";
 
     public static final String PRODUCTIONS_COUNTRY = "production_country";
+
+    public static final String POPULARITY_SORT_ORDER = POPULARITY + " DESC";
+
+    public static final String VOTEAVERAGE_SORT_ORDER = VOTEAVERAGE + " DESC";
+
+    public static final String MOVIE_COLLECTED = "1";
+    public static final String MOVIE_NOCOLLECTED = "0";
 }

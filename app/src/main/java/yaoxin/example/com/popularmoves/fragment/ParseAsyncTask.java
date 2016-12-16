@@ -3,6 +3,7 @@ package yaoxin.example.com.popularmoves.fragment;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
@@ -38,26 +39,133 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
 
     private Handler mHandler;
 
-    private Context c;
+    private Context mC;
 
     public ParseAsyncTask(Handler mHandler, Context c) {
         this.mHandler = mHandler;
-        this.c = c;
+        this.mC = c;
     }
 
     @Override
     protected List<Move> doInBackground(String... params) {
+
+        String base_url = params[0];
+        String vote_url = params[1];
+        String apikey = params[2];
+        List<Move> movies = getPopularMovies(base_url, apikey);
+        if (!movies.isEmpty()) {
+            save2database(movies);
+        }
+        saveVoteMovies(vote_url, apikey);
+        return null;
+    }
+
+
+    @Override
+    protected void onPostExecute(List<Move> moves) {
+        super.onPostExecute(moves);
+        mHandler.obtainMessage(RESPONSE_OK, moves).sendToTarget();
+    }
+
+
+    /**
+     * vote movies
+     *
+     * @param json_url
+     * @param apikey
+     */
+    public void saveVoteMovies(String json_url, String apikey) {
+
+        String path = json_url + apikey;
+        InputStreamReader reader = null;
+        ContentResolver resolver = mC.getContentResolver();
         try {
-            String base_url = params[0];
-            String apikey = params[1];
-            String json_url = base_url + apikey;
+            URL url = new URL(path);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            int code = conn.getResponseCode();
+            if (code == RESPONSE_OK) {
+                StringBuffer buffer = new StringBuffer();
+                char[] buf = new char[1024 * 10];
+                reader = new InputStreamReader(conn.getInputStream());
+                int len = -1;
+                while (-1 != (len = reader.read(buf))) {
+                    String s = new String(buf, 0, len);
+                    buffer.append(s);
+                }
+
+                Log.d(Log_D, buffer.toString());
+                JSONObject obj = new JSONObject(buffer.toString());
+                JSONArray array = obj.optJSONArray("results");
+                List<ContentValues> listValues = new ArrayList<>();
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject object = array.getJSONObject(i);
+                    String movieId = object.optString("id");
+                    Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, new String[]{MovieEntry.TITLE},
+                            MovieEntry.MOVIEID + "=?", new String[]{movieId}, null);
+                    if (cursor != null && cursor.moveToFirst()) {
+                        cursor.close();
+                        continue;
+                    }
+                    ContentValues value = new ContentValues();
+                    value.put(MovieEntry.TITLE, object.optString("title"));
+                    value.put(MovieEntry.MOVIEID, object.optInt("id"));
+                    value.put(MovieEntry.POSTURL, object.optString("poster_path"));
+                    value.put(MovieEntry.BACKDROPURL, object.optString("backdrop_path"));
+                    value.put(MovieEntry.OVERVIEW, object.optString("overview"));
+                    value.put(MovieEntry.VOTEAVERAGE, object.optDouble("vote_average"));
+                    value.put(MovieEntry.POPULARITY, object.optDouble("popularity"));
+                    value.put(MovieEntry.REALEASEDATE, object.optString("release_date"));
+                    value.put(MovieEntry.COLLECTED, "0");
+                    JSONArray json_genres = object.optJSONArray("genre_ids");
+                    StringBuffer stringBuffer = new StringBuffer();
+                    if (json_genres != null) {
+                        for (int j = 0; j < json_genres.length(); j++) {
+//                                JSONObject genre_json = json_genres.getJSONObject(j);
+                            int genre = json_genres.getInt(j);
+                            if (j != json_genres.length() - 1) {
+                                stringBuffer.append(genre);
+                                stringBuffer.append("/");
+                            } else {
+                                stringBuffer.append(genre);
+                            }
+                        }
+                    }
+                    value.put(MovieEntry.GENRES, stringBuffer.toString());
+                    listValues.add(value);
+//                    resolver.insert(MovieContract.CONTENT_MOVE_URI, value);
+                }
+                ContentValues[] valuesarr = listValues.toArray(new ContentValues[listValues.size()]);
+                int num = resolver.bulkInsert(MovieContract.CONTENT_MOVE_URI, valuesarr);
+                Log.i(Log_D, "votearrNum = " + num);
+
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * popular movies
+     *
+     * @param base_url
+     * @param apikey
+     * @return
+     */
+    public List<Move> getPopularMovies(String base_url, String apikey) {
+        String json_url = base_url + apikey;
+        InputStreamReader reader = null;
+        try {
             URL url = new URL(json_url);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             int code = conn.getResponseCode();
             if (code == RESPONSE_OK) {
                 StringBuffer buffer = new StringBuffer();
                 char[] buf = new char[1024 * 10];
-                InputStreamReader reader = new InputStreamReader(conn.getInputStream());
+                reader = new InputStreamReader(conn.getInputStream());
                 int len = -1;
                 while (-1 != (len = reader.read(buf))) {
                     String s = new String(buf, 0, len);
@@ -125,20 +233,20 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
             e.printStackTrace();
         } catch (JSONException e) {
             e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
-
         return null;
     }
 
-
-    @Override
-    protected void onPostExecute(List<Move> moves) {
-        super.onPostExecute(moves);
-        mHandler.obtainMessage(RESPONSE_OK, moves).sendToTarget();
-    }
-
     private void save2database(List<Move> moves) {
-        ContentResolver resolver = this.c.getContentResolver();
+        ContentResolver resolver = this.mC.getContentResolver();
 //        Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, DisplayFragment.CONTRACT_MOVIE_PROJECTIONS, null, null, null);
 //        if (cursor.getColumnCount() > 0) {
 //            return;
@@ -151,13 +259,14 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                 Move move = moves.get(i);
 //                value.clear();
                 value = new ContentValues();
-                value.put(MovieEntry._ID, i);
+//                value.put(MovieEntry._ID, i);
                 value.put(MovieEntry.TITLE, move.getTitle());
                 value.put(MovieEntry.MOVIEID, String.valueOf(move.getMoveId()));
                 value.put(MovieEntry.POSTURL, move.getPosterUrl());
                 value.put(MovieEntry.BACKDROPURL, move.getBackDropUrl());
                 value.put(MovieEntry.OVERVIEW, move.getOverView());
                 value.put(MovieEntry.VOTEAVERAGE, move.getVoteAverage());
+                value.put(MovieEntry.POPULARITY, move.getPopularity());
                 value.put(MovieEntry.REALEASEDATE, move.getReleaseDate());
                 value.put(MovieEntry.COLLECTED, "0");
                 value.put(MovieEntry.GENRES, move.getGenres());
@@ -169,11 +278,6 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
             }
             int num = resolver.bulkInsert(MovieContract.CONTENT_MOVE_URI, contentValues);
             System.out.println("数据插入数据库..." + num);
-
-
         }
-
     }
-
-
 }

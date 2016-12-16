@@ -1,6 +1,7 @@
 package yaoxin.example.com.popularmoves.fragment;
 
 
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.TypedArray;
@@ -69,7 +70,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             MovieEntry.OVERVIEW,
             MovieEntry.VOTEAVERAGE,
             MovieEntry.REALEASEDATE,
-//            MovieEntry.COMMENT,
+            MovieEntry.POPULARITY,
             MovieEntry.COLLECTED,
             MovieEntry.GENRES,
             MovieEntry.PRODUCTIONS_COUNTRY
@@ -84,10 +85,10 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     public static final int COL_MOVIE_VOERVIEW = 5;
     public static final int COL_MOVIE_VOTEAVERAGE = 6;
     public static final int COL_MOVIE_REALEASEDATE = 7;
-    //    public static final int COL_MOVIE_COMMENT = 8;
-    public static final int COL_MOVIE_COLLECTED = 8;
-    public static final int COL_MOVIE_GENRES = 9;
-    public static final int COL_MOVIE_PRODUCTIONCONTRY = 10;
+    public static final int COL_MOVIE_POPULARITY = 8;
+    public static final int COL_MOVIE_COLLECTED = 9;
+    public static final int COL_MOVIE_GENRES = 10;
+    public static final int COL_MOVIE_PRODUCTIONCONTRY = 11;
 
 
     private RecyclerView mRecyclerView;
@@ -170,7 +171,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         mRecyclerView.setAdapter(mCursorAdapter);
 
         ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-        task.execute(base_url, apikey);
+        task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey);
 
         return view;
     }
@@ -189,13 +190,19 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         switch (itemId) {
             case R.id.menu_refresh://刷新
                 ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-                task.execute(base_url, apikey);
+                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey);
                 return true;
             case R.id.menu_setting://设置
                 Intent intent = new Intent(getActivity(), SettingActivity.class);
                 startActivityForResult(intent, REQUESTCODE_SETTINGACTIVITY);
                 return true;
             case R.id.menu_collect://收藏
+                ContentResolver resolver = getActivity().getContentResolver();
+                Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                        MovieEntry.COLLECTED + "=?", new String[]{MovieEntry.MOVIE_COLLECTED}, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    mCursorAdapter.changeCursor(cursor);
+                }
                 return true;
         }
 
@@ -205,10 +212,21 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTPOPULAR) {
+        if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTPOPULAR) {//popular
+            ContentResolver resolver = getActivity().getContentResolver();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    null, null, MovieEntry.DEFAULT_SORT_ORDER);
+            if (cursor != null && cursor.moveToFirst()) {
+                mCursorAdapter.changeCursor(cursor);
+            }
+        } else if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTVOTEAVERAGE) {//voteaverage
+            ContentResolver resolver = getActivity().getContentResolver();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    null, null, MovieEntry.VOTEAVERAGE_SORT_ORDER);
+            if (cursor != null && cursor.moveToFirst()) {
+                mCursorAdapter.changeCursor(cursor);
+            }
 
-
-        } else if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTVOTEAVERAGE) {
 
         }
     }
@@ -218,12 +236,15 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 
         String selection = null;
         String[] selectionArgs = null;
-        String sortOrder = MovieEntry.DEFAULT_SORT_ORDER;
+        String sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
         return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
                 selection, selectionArgs, sortOrder);
     }
 
-    /*数据源有更新时，会回调这个方法*/
+    /**
+     * @param loader
+     * @param data
+     */
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mCursorAdapter.swapCursor(data);
@@ -259,7 +280,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             move.setOverView(cursor.getString(COL_MOVIE_VOERVIEW));
             move.setVoteAverage(Double.parseDouble(cursor.getString(COL_MOVIE_VOTEAVERAGE)));
             move.setReleaseDate(cursor.getString(COL_MOVIE_REALEASEDATE));
-//            move.setComment(cursor.getString(COL_MOVIE_COMMENT));
+            move.setComment(cursor.getString(COL_MOVIE_POPULARITY));
             move.setCollected(cursor.getString(COL_MOVIE_COLLECTED));
             move.setGenres(cursor.getString(COL_MOVIE_GENRES));
         }

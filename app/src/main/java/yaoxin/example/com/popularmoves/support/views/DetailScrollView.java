@@ -55,6 +55,7 @@ public class DetailScrollView extends ScrollView {
                         if (rectF.contains(x, y)) {
                             Log.d(TAG, "contaion...");
                             view.getParent().requestDisallowInterceptTouchEvent(true);
+//                            return false;
                         }
                     }
                 }

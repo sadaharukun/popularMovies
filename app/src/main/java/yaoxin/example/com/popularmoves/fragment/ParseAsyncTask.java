@@ -23,6 +23,7 @@ import java.util.List;
 import yaoxin.example.com.popularmoves.data.MovieContract;
 import yaoxin.example.com.popularmoves.data.MovieEntry;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
+import yaoxin.example.com.popularmoves.utils.Utils;
 
 /**
  * Created by yaoxinxin on 2016/11/25.
@@ -100,6 +101,9 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                     String s = new String(buf, 0, len);
                     buffer.append(s);
                 }
+
+                Utils utils = Utils.getInstance();
+//                utils.showToast(mC,"Refresh..");
 
                 Log.d(Log_D, buffer.toString());
                 JSONObject obj = new JSONObject(buffer.toString());

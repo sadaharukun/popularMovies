@@ -10,9 +10,15 @@ public class MovieApplication extends Application {
 
     public static final String APIKEY = BuildConfig.PoPular_Apikey;
 
+    public static MovieApplication instance;
+
+    public static MovieApplication getInstance() {
+        return instance;
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
+        instance = this;
     }
 }

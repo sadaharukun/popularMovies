@@ -42,7 +42,7 @@ import yaoxin.example.com.popularmoves.data.MovieEntry;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.fragment.support.MovieCursorAdapter;
 import yaoxin.example.com.popularmoves.fragment.support.OnClickListener;
-import yaoxin.example.com.popularmoves.utils.SharedPreferenceUtils;
+import yaoxin.example.com.popularmoves.utils.Utils;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -200,7 +200,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
                 startActivityForResult(intent, REQUESTCODE_SETTINGACTIVITY);
                 return true;
             case R.id.menu_collect://收藏
-                SharedPreferenceUtils utils = SharedPreferenceUtils.getInstance();
+                Utils utils = Utils.getInstance();
                 boolean flag = utils.IsMovieCollected(getActivity());
                 ContentResolver resolver = getActivity().getContentResolver();
                 if (!flag) {
@@ -255,7 +255,13 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 
         String selection = null;
         String[] selectionArgs = null;
+        String way = Utils.getInstance().getSortway(getActivity()).split("_")[1];
         String sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
+        if ("0".equals(way)) {
+            sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
+        } else if ("1".equals(way)) {
+            sortOrder = MovieEntry.VOTEAVERAGE_SORT_ORDER;
+        }
         return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
                 selection, selectionArgs, sortOrder);
     }

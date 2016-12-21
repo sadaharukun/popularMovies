@@ -52,11 +52,12 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
         String base_url = params[0];
         String vote_url = params[1];
         String apikey = params[2];
-        List<Move> movies = getPopularMovies(base_url, apikey);
-        if (!movies.isEmpty()) {
+        boolean refreshFlag = Boolean.parseBoolean(params[3]);
+        List<Move> movies = getPopularMovies(base_url, apikey, refreshFlag);
+        if (movies != null && movies.size() >= 0) {
             save2database(movies);
         }
-        saveVoteMovies(vote_url, apikey);
+        saveVoteMovies(vote_url, apikey, refreshFlag);
         return null;
     }
 
@@ -74,11 +75,18 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
      * @param json_url
      * @param apikey
      */
-    public void saveVoteMovies(String json_url, String apikey) {
+    public void saveVoteMovies(String json_url, String apikey, boolean refreshflag) {
 
         String path = json_url + apikey;
-        InputStreamReader reader = null;
         ContentResolver resolver = mC.getContentResolver();
+        if (!refreshflag) {
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, DisplayFragment.CONTRACT_MOVIE_PROJECTIONS,
+                    null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return;
+            }
+        }
+        InputStreamReader reader = null;
         try {
             URL url = new URL(path);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -155,8 +163,16 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
      * @param apikey
      * @return
      */
-    public List<Move> getPopularMovies(String base_url, String apikey) {
+    public List<Move> getPopularMovies(String base_url, String apikey, boolean refreshFlag) {
         String json_url = base_url + apikey;
+        ContentResolver resolver = mC.getContentResolver();
+        if (!refreshFlag) {
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, DisplayFragment.CONTRACT_MOVIE_PROJECTIONS,
+                    null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return null;
+            }
+        }
         InputStreamReader reader = null;
         try {
             URL url = new URL(json_url);
@@ -217,7 +233,7 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                     Log.d(Log_D, "result.length==" + result.size());
 
                     /*this is a test about the database*/
-                    save2database(result);
+//                    save2database(result);
 
 
                     return result;

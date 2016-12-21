@@ -34,6 +34,8 @@ public class MovieProvider extends ContentProvider {
     private static final int MOVIE_ID = 101;
     private static final int REVIEWS = 102;
     private static final int REVIEWS_ID = 103;
+    private static final int VIDEOS = 104;
+    private static final int VIDEOS_ID = 105;
     //    private static final int MOVIE_COLLECTED = 102;
     private static UriMatcher mUriMatcher;
 
@@ -43,6 +45,8 @@ public class MovieProvider extends ContentProvider {
         mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_MOVIE + "/#", MOVIE_ID);
         mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_REVIEWS, REVIEWS);
         mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_REVIEWS + "/#", REVIEWS_ID);
+        mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_VIDEOS, VIDEOS);
+        mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_VIDEOS + "/#", VIDEOS_ID);
 //        mUriMatcher.addURI(MovieContract.AUTHORITY, MovieContract.PATH_MOVIE_COLLECTED, MOVIE_COLLECTED);
     }
 
@@ -93,6 +97,14 @@ public class MovieProvider extends ContentProvider {
                 String review_id = uri.getPathSegments().get(1);
                 builder.appendWhere(ReviewsEntry._ID + "=" + review_id);
                 break;
+            case VIDEOS:
+                builder.setTables(VideosEntry.TABLE_NAME);
+                break;
+            case VIDEOS_ID:
+                builder.setTables(VideosEntry.TABLE_NAME);
+                String video_id = uri.getPathSegments().get(1);
+                builder.appendWhere(VideosEntry._ID + "=" + video_id);
+                break;
         }
         cursor = builder.query(db, projection, selection, selectionArgs, null, null, sortOrder);
 
@@ -115,6 +127,10 @@ public class MovieProvider extends ContentProvider {
                 return MovieContract.CONTENT_REVIEWS_TYPE;
             case REVIEWS_ID:
                 return MovieContract.CONTENT_REVIEWS_ITEM_TYPE;
+            case VIDEOS:
+                return MovieContract.CONTENT_VIDEOS_TYPE;
+            case VIDEOS_ID:
+                return MovieContract.CONTENT_VIDEOS_ITEM_TYPE;
         }
         return null;
     }
@@ -139,15 +155,20 @@ public class MovieProvider extends ContentProvider {
                 Uri newUri = MovieContract.buildMovieUri(rowid);
                 mResolver.notifyChange(newUri, null);
                 return newUri;
-
             case REVIEWS:
                 long review_rowId = db.insert(ReviewsEntry.TABLE_NAME, MovieEntry._ID, values);
                 if (review_rowId == -1) {
                     throw new SQLiteException("insert error");
                 }
                 Uri review_uri = MovieContract.buildReviewUri(review_rowId);
-
                 return review_uri;
+            case VIDEOS:
+                long video_rowId = db.insert(VideosEntry.TABLE_NAME, VideosEntry._ID, values);
+                if (video_rowId == -1) {
+                    throw new SQLiteException("insert error");
+                }
+                Uri video_uri = MovieContract.buildVideoUri(video_rowId);
+                return video_uri;
         }
         return null;
     }
@@ -175,7 +196,15 @@ public class MovieProvider extends ContentProvider {
                 String reviews_id = uri.getPathSegments().get(1);
                 count = db.delete(ReviewsEntry.TABLE_NAME, ReviewsEntry._ID + "=" + reviews_id +
                         (TextUtils.isEmpty(selection) ? "" : " AND (" + selection + ")"), selectionArgs);
-
+                break;
+            case VIDEOS:
+                count = db.delete(VideosEntry.TABLE_NAME, selection, selectionArgs);
+                break;
+            case VIDEOS_ID:
+                String video_id = uri.getPathSegments().get(1);
+                count = db.delete(VideosEntry.TABLE_NAME, VideosEntry._ID + "=" + video_id +
+                        (TextUtils.isEmpty(selection) ? "" : " AND (" + selection + ")"), selectionArgs);
+                break;
         }
         if (count != 0) {
             mResolver.notifyChange(uri, null);
@@ -205,6 +234,14 @@ public class MovieProvider extends ContentProvider {
             case REVIEWS_ID:
                 String reviews_id = uri.getPathSegments().get(1);
                 count = db.update(ReviewsEntry.TABLE_NAME, values, ReviewsEntry._ID + "=" + reviews_id +
+                        (TextUtils.isEmpty(selection) ? "" : " AND (" + selection + ")"), selectionArgs);
+                break;
+            case VIDEOS:
+                count = db.update(VideosEntry.TABLE_NAME, values, selection, selectionArgs);
+                break;
+            case VIDEOS_ID:
+                String video_id = uri.getPathSegments().get(1);
+                count = db.update(VideosEntry.TABLE_NAME, values, VideosEntry._ID + "=" + video_id +
                         (TextUtils.isEmpty(selection) ? "" : " AND (" + selection + ")"), selectionArgs);
                 break;
         }
@@ -258,6 +295,23 @@ public class MovieProvider extends ContentProvider {
                 mResolver.notifyChange(uri, null);
                 return review_count;
 
+            case VIDEOS:
+                int video_count = 0;
+                db.beginTransaction();
+                try {
+
+                    for (ContentValues val : values) {
+                        long video_id = db.insert(MovieEntry.TABLE_NAME, MovieEntry._ID, val);
+                        if (video_id != -1) {
+                            video_count++;
+                        }
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
+                }
+                mResolver.notifyChange(uri, null);
+                return video_count;
             default:
 
                 return super.bulkInsert(uri, values);

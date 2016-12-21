@@ -36,6 +36,8 @@ public class MovieEntry implements BaseColumns {
 
     public static final String GENRES = "genres";
 
+    public static final String RUNTIME = "runtime";
+
     public static final String PRODUCTIONS_COUNTRY = "production_country";
 
     public static final String POPULARITY_SORT_ORDER = POPULARITY + " DESC";

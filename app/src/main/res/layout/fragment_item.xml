@@ -18,8 +18,8 @@
         android:id="@+id/collect"
         android:layout_width="20dp"
         android:layout_height="20dp"
-        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
+        android:layout_alignRight="@id/movie_poster"
         android:layout_marginRight="10dp"
         android:layout_marginTop="10dp" />
 
@@ -40,8 +40,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="7dp"
         android:layout_marginBottom="20dp"
+        android:layout_marginTop="7dp"
         android:max="10"
         android:numStars="5" />
 

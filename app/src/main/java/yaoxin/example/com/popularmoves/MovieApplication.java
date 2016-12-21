@@ -8,7 +8,7 @@ import android.app.Application;
 
 public class MovieApplication extends Application {
 
-    public static final String APIKEY = "a140c3ec88077e7e6c5e738197232747";
+    public static final String APIKEY = BuildConfig.PoPular_Apikey;
 
 
     @Override

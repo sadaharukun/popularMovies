@@ -23,6 +23,7 @@ import yaoxin.example.com.popularmoves.MovieApplication;
 import yaoxin.example.com.popularmoves.data.MovieContract;
 import yaoxin.example.com.popularmoves.data.MovieEntry;
 import yaoxin.example.com.popularmoves.data.ReviewsEntry;
+import yaoxin.example.com.popularmoves.data.VideosEntry;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 
 /**
@@ -32,11 +33,13 @@ import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
 
     private static final String TAG = "MovieDetailActivity";
-    private static final String base_url = "https://api.themoviedb.org/3/movie/movieId?language=zh&api_key=";
+    private static final String base_url = "https://api.themoviedb.org/3/movie/movieId?api_key=";
     private static final String reviews_url = "https://api.themoviedb.org/3/movie/moveId/reviews?api_key=";
+    private static final String vidos_url = "http://api.themoviedb.org/3/movie/movieId/videos?api_key=";
     private static final int RESULT_OK = 200;
     public static final int DETAIL_MOVIE = 1000;
     public static final int GET_REVIEWS = 1001;
+    public static final int GET_VIDEOS = 1002;
 
     private Context mC;
     private Handler mHandler;
@@ -72,6 +75,7 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
                     Log.d(TAG, buffer.toString());
 
                     JSONObject object = new JSONObject(buffer.toString());
+                    int runtime = object.optInt("runtime");
                     JSONArray genres = object.optJSONArray("genres");
                     JSONArray production_countries = object.optJSONArray("production_countries");
                     StringBuffer buffer2 = new StringBuffer();
@@ -97,6 +101,7 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
 
 
                     ContentValues values = new ContentValues();
+                    values.put(MovieEntry.RUNTIME, runtime);
                     values.put(MovieEntry.GENRES, buffer2.toString());
                     values.put(MovieEntry.PRODUCTIONS_COUNTRY, buffer3.toString());
                     ContentResolver resolver = mC.getContentResolver();
@@ -137,12 +142,12 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
                     ReviewsEntry.MOVE_ID + "=?", new String[]{movieId}, null);
             if (cursor != null) {
                 if (cursor.moveToFirst()) {
+                    cursor.close();
                     return null;
                 }
             }
 
             InputStreamReader reader = null;
-
             try {
                 URL url = new URL(path);
                 conn = (HttpURLConnection) url.openConnection();
@@ -199,6 +204,65 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
                     }
                 }
             }
+        } else if (taskId == GET_VIDEOS) {
+            String movieId = (String) params[1];
+            String path = vidos_url.replace("movieId", movieId) + MovieApplication.APIKEY;
+            ContentResolver resolver = this.mC.getContentResolver();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_VIDEOS_URI, new String[]{VideosEntry._ID},
+                    VideosEntry.MOVIE_ID + "=?", new String[]{movieId}, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                return null;
+            }
+
+            InputStreamReader reader = null;
+            try {
+                URL url = new URL(path);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                int responseCode = conn.getResponseCode();
+                if (responseCode == RESULT_OK) {
+                    StringBuffer buffer = new StringBuffer();
+                    char[] buf = new char[1024 * 10];
+                    reader = new InputStreamReader(conn.getInputStream());
+                    int len = -1;
+                    while (-1 != (len = reader.read(buf))) {
+                        String s = new String(buf, 0, len);
+                        buffer.append(s);
+                    }
+                    Log.i(TAG, "video_json==" + buffer.toString());
+                    JSONObject obj = new JSONObject(buffer.toString());
+                    JSONArray array = obj.optJSONArray("results");
+                    ContentValues values = new ContentValues();
+                    StringBuffer keys = new StringBuffer();
+                    for (int i = 0; i < array.length(); i++) {
+                        JSONObject object = array.getJSONObject(i);
+                        if (i != array.length() - 1) {
+                            keys.append(object.optString("key"));
+                            keys.append("#");
+                        } else {
+                            keys.append(object.optString("key"));
+                        }
+                    }
+                    values.put(VideosEntry.MOVIE_ID, movieId);
+                    values.put(VideosEntry.VIDEO_KEYS, keys.toString());
+                    resolver.insert(MovieContract.CONTENT_VIDEOS_URI, values);
+
+                    return true;
+                }
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            } finally {
+                if (reader != null) {
+                    try {
+                        reader.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
 
 
         }
@@ -212,5 +276,10 @@ public class MovieDetailAsyncTask extends AsyncTask<Object, Object, Object> {
         if (o != null && o instanceof Cursor) {
             mHandler.obtainMessage(DETAIL_MOVIE, o).sendToTarget();
         }
+    }
+
+    @Override
+    protected void onCancelled() {
+        super.onCancelled();
     }
 }

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<yaoxin.example.com.popularmoves.support.views.DetailScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="yaoxin.example.com.popularmoves.DetailActivity">
@@ -52,16 +53,26 @@
         </RelativeLayout>
 
         <!--backdrop-->
-        <ImageView
+        <RelativeLayout
             android:id="@+id/backdrop"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@id/ll_name"
-            android:scaleType="centerInside"
             app:layout_marginLeftPercent="2%"
-            app:layout_marginTopPercent="2%"
+            app:layout_marginTopPercent="2%">
 
-            />
+            <ImageView
+                android:id="@+id/backdrop_img"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:scaleType="centerInside" />
+
+            <ImageView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:src="@mipmap/play" />
+        </RelativeLayout>
 
         <!--voteAverage-->
         <RatingBar
@@ -148,7 +159,7 @@
         </com.ms.square.android.expandabletextview.ExpandableTextView>
 
 
-        <ListView
+        <yaoxin.example.com.popularmoves.support.views.ReviewsListView
             android:id="@+id/reviews"
             android:layout_width="match_parent"
             android:layout_height="0dp"
@@ -163,8 +174,8 @@
             app:layout_marginTopPercent="1%">
 
 
-        </ListView>
+        </yaoxin.example.com.popularmoves.support.views.ReviewsListView>
 
 
     </android.support.percent.PercentRelativeLayout>
-</ScrollView>
+</yaoxin.example.com.popularmoves.support.views.DetailScrollView>

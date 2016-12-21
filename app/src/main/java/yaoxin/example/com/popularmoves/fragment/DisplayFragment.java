@@ -42,6 +42,7 @@ import yaoxin.example.com.popularmoves.data.MovieEntry;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.fragment.support.MovieCursorAdapter;
 import yaoxin.example.com.popularmoves.fragment.support.OnClickListener;
+import yaoxin.example.com.popularmoves.utils.SharedPreferenceUtils;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -70,6 +71,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             MovieEntry.OVERVIEW,
             MovieEntry.VOTEAVERAGE,
             MovieEntry.REALEASEDATE,
+            MovieEntry.RUNTIME,
             MovieEntry.POPULARITY,
             MovieEntry.COLLECTED,
             MovieEntry.GENRES,
@@ -85,10 +87,11 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     public static final int COL_MOVIE_VOERVIEW = 5;
     public static final int COL_MOVIE_VOTEAVERAGE = 6;
     public static final int COL_MOVIE_REALEASEDATE = 7;
-    public static final int COL_MOVIE_POPULARITY = 8;
-    public static final int COL_MOVIE_COLLECTED = 9;
-    public static final int COL_MOVIE_GENRES = 10;
-    public static final int COL_MOVIE_PRODUCTIONCONTRY = 11;
+    public static final int COL_MOVIE_RUNTIME = 8;
+    public static final int COL_MOVIE_POPULARITY = 9;
+    public static final int COL_MOVIE_COLLECTED = 10;
+    public static final int COL_MOVIE_GENRES = 11;
+    public static final int COL_MOVIE_PRODUCTIONCONTRY = 12;
 
 
     private RecyclerView mRecyclerView;
@@ -171,7 +174,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         mRecyclerView.setAdapter(mCursorAdapter);
 
         ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-        task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey);
+        task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(false));
 
         return view;
     }
@@ -190,20 +193,36 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         switch (itemId) {
             case R.id.menu_refresh://刷新
                 ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey);
+                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(true));
                 return true;
             case R.id.menu_setting://设置
                 Intent intent = new Intent(getActivity(), SettingActivity.class);
                 startActivityForResult(intent, REQUESTCODE_SETTINGACTIVITY);
                 return true;
             case R.id.menu_collect://收藏
+                SharedPreferenceUtils utils = SharedPreferenceUtils.getInstance();
+                boolean flag = utils.IsMovieCollected(getActivity());
                 ContentResolver resolver = getActivity().getContentResolver();
-                Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
-                        MovieEntry.COLLECTED + "=?", new String[]{MovieEntry.MOVIE_COLLECTED}, null);
-                if (cursor != null && cursor.moveToFirst()) {
-                    mCursorAdapter.changeCursor(cursor);
+                if (!flag) {
+                    Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                            MovieEntry.COLLECTED + "=?", new String[]{MovieEntry.MOVIE_COLLECTED}, null);
+                    if (cursor != null && cursor.moveToFirst()) {
+                        mCursorAdapter.changeCursor(cursor);
+                    } else {
+                        mCursorAdapter.changeCursor(null);
+                    }
+                    item.setTitle("全部");
+                    utils.setMovieCollected(getActivity(), true);
+                    return true;
+                } else {
+                    Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS, null,
+                            null, MovieEntry.POPULARITY_SORT_ORDER);
+                    if (cursor != null && cursor.moveToFirst()) {
+                        mCursorAdapter.changeCursor(cursor);
+                    }
+                    item.setTitle(getString(R.string.menu_collected));
+                    utils.setMovieCollected(getActivity(), false);
                 }
-                return true;
         }
 
 

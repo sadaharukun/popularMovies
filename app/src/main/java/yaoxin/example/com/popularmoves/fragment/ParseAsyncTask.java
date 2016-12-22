@@ -34,6 +34,7 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
     private static final String Log_D = "ParseAsyncTask";
     //    private static final String APIKEY  = "";
     private static final int RESPONSE_OK = 200;
+    public static final int RESPONSE_WRONG = 500;
 
     private static final String BASE_DETAIL_MOVE = "https://api.themoviedb.org/3/movie/language=zh&movieId?api_key=";
 
@@ -150,6 +151,8 @@ public class ParseAsyncTask extends AsyncTask<String, Integer, List<Move>> {
                 int num = resolver.bulkInsert(MovieContract.CONTENT_MOVE_URI, valuesarr);
                 Log.i(Log_D, "votearrNum = " + num);
 
+            } else {
+                mHandler.obtainMessage(RESPONSE_WRONG).sendToTarget();
             }
 
         } catch (IOException e) {

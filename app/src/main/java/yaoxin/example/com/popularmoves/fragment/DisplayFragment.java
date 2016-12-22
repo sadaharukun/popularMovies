@@ -110,6 +110,9 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         public void handleMessage(Message msg) {
             super.handleMessage(msg);
             mProgressBar.setVisibility(View.GONE);
+            if (msg.what == ParseAsyncTask.RESPONSE_WRONG) {
+                Utils.getInstance().showToast(getActivity(), "Refresh Fail..");
+            }
         }
     };
 

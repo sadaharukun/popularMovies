@@ -40,9 +40,9 @@ public class MovieEntry implements BaseColumns {
 
     public static final String PRODUCTIONS_COUNTRY = "production_country";
 
-    public static final String POPULARITY_SORT_ORDER = POPULARITY + " DESC";
+    public static final String POPULARITY_SORT_ORDER = TABLE_NAME + "." + POPULARITY + " DESC";
 
-    public static final String VOTEAVERAGE_SORT_ORDER = VOTEAVERAGE + " DESC";
+    public static final String VOTEAVERAGE_SORT_ORDER = TABLE_NAME + "." + VOTEAVERAGE + " DESC";
 
     public static final String MOVIE_COLLECTED = "1";
     public static final String MOVIE_NOCOLLECTED = "0";

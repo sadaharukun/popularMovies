@@ -10,7 +10,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class MovieSQLiteOpenHelper extends SQLiteOpenHelper {
 
-    public static int databaseVersion = 18;
+    public static int databaseVersion = 22;
 
     public static String databaseName = "yaoxin.db";
 
@@ -58,11 +58,21 @@ public class MovieSQLiteOpenHelper extends SQLiteOpenHelper {
                 MovieEntry.TABLE_NAME + "(" + MovieEntry.MOVIEID + ")"
                 + ")";
 
+        String sql4 = "CREATE TABLE " + MovieTypeEntry.TABLENAME + "(" +
+                MovieTypeEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                MovieTypeEntry.MOVIEID + " TEXT NOT NULL UNIQUE," +
+                MovieTypeEntry.POPULAR + " TEXT DEFAULT 1," +
+                MovieTypeEntry.VOTEAVERAGE + " TEXT DEFAULT 1," +
+                "FOREIGN KEY (" + MovieTypeEntry.MOVIEID + ") REFERENCES " +
+                MovieEntry.TABLE_NAME + "(" + MovieEntry.MOVIEID + ")" +
+                ")";
+
         System.out.println("create table:" + sql);
 
         db.execSQL(sql);
         db.execSQL(sql2);
         db.execSQL(sql3);
+        db.execSQL(sql4);
 
     }
 
@@ -74,6 +84,7 @@ public class MovieSQLiteOpenHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + MovieEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + ReviewsEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + VideosEntry.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + MovieTypeEntry.TABLENAME);
         onCreate(db);
 
     }

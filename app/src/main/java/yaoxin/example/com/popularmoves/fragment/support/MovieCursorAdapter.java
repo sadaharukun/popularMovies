@@ -4,10 +4,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DataSetObserver;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
@@ -15,6 +17,7 @@ import com.squareup.picasso.Picasso;
 
 import yaoxin.example.com.popularmoves.R;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
+import yaoxin.example.com.popularmoves.utils.Utils;
 
 /**
  * Created by yaoxinxin on 2016/12/7.
@@ -22,9 +25,14 @@ import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
  * 适用于cursorLoader的RecyclerView.Adapter
  */
 
-public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.ViewHolder> {
+public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private static final String TAG = "MovieCursorAdapter";
+
+    private static final int ITEM_TYPE_NORMAL = 0;
+    private static final int ITEM_TYPE_FOOTERVIEW = 1;
+
+    private View mFooterView;
 
     private String base_url = "https://image.tmdb.org/t/p/w500";
 
@@ -63,7 +71,11 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
     public int getItemCount() {
         if (mDataValid && mCursor != null) {
 //            Log.i(TAG, "count = " + mCursor.getColumnCount());
-            return mCursor.getCount();
+            if (mFooterView != null) {
+                return mCursor.getCount() + 1;
+            } else {
+                return mCursor.getCount();
+            }
         } else {
             return 0;
         }
@@ -121,48 +133,87 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
         return oldCursor;
     }
 
+    public void setFooterView(View footerView) {
+        this.mFooterView = footerView;
+        notifyItemInserted(getItemCount() - 1);
+    }
 
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public int getItemViewType(int position) {
+        if (mFooterView != null) {
+            if (position == getItemCount() - 1) {
+                return ITEM_TYPE_FOOTERVIEW;
+            }
+        }
+        return ITEM_TYPE_NORMAL;
+    }
 
-        View itemView = LayoutInflater.from(mC).inflate(R.layout.fragment_item, parent, false);
-        ViewHolder holder = new ViewHolder(itemView);
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
-
-        return holder;
+        if (viewType == ITEM_TYPE_NORMAL) {
+            View itemView = LayoutInflater.from(mC).inflate(R.layout.fragment_item, parent, false);
+            ItemViewHolder holder = new ItemViewHolder(itemView);
+            return holder;
+        } else if (viewType == ITEM_TYPE_FOOTERVIEW) {
+            RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) mFooterView.getLayoutParams();
+            params.width = Utils.getInstance().getScreenWidthAndHeight(mC)[0];
+            mFooterView.setLayoutParams(params);
+            RecyclerView.ViewHolder footerViewHolder = new FooterViewHolder(mFooterView);
+            return footerViewHolder;
+        }
+        return null;
     }
 
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, final int position) {
+    public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
 
-        final Cursor cursor = (Cursor) getItem(position);
-        if (cursor != null) {
-            String postUrl = cursor.getString(DisplayFragment.COL_MOVIE_POSTURL);
-            System.out.println("postUrl*****" + postUrl);
-            holder.imageView.setTag(position);
-            holder.mTitle.setText(cursor.getString(DisplayFragment.COL_MOVIE_TITLE));
-            holder.mVoteaverage.setRating((float) (Double.parseDouble(cursor.getString(DisplayFragment.COL_MOVIE_VOTEAVERAGE)) / 2));
-            Picasso.with(mC).load(base_url + postUrl).placeholder(R.mipmap.ic_launcher).into(holder.imageView);
-            String collected = cursor.getString(DisplayFragment.COL_MOVIE_COLLECTED);
-            if ("1".equals(collected)) {
-                holder.collect.setImageResource(R.mipmap.favorite_ed);
-            } else {
-                holder.collect.setImageDrawable(null);
-            }
+        if (getItemViewType(position) == ITEM_TYPE_NORMAL) {
+            final Cursor cursor = (Cursor) getItem(position);
+            if (cursor != null) {
+                if (holder instanceof ItemViewHolder) {
+                    String postUrl = cursor.getString(DisplayFragment.COL_MOVIE_POSTURL);
+                    System.out.println("postUrl*****" + postUrl);
+                    ((ItemViewHolder) holder).imageView.setTag(position);
+                    ((ItemViewHolder) holder).mTitle.setText(cursor.getString(DisplayFragment.COL_MOVIE_TITLE));
+                    ((ItemViewHolder) holder).mVoteaverage.setRating((float) (Double.parseDouble(cursor.getString(DisplayFragment.COL_MOVIE_VOTEAVERAGE)) / 2));
+                    Picasso.with(mC).load(base_url + postUrl).placeholder(R.mipmap.ic_launcher).into(((ItemViewHolder) holder).imageView);
+                    String collected = cursor.getString(DisplayFragment.COL_MOVIE_COLLECTED);
+                    if ("1".equals(collected)) {
+                        ((ItemViewHolder) holder).collect.setImageResource(R.mipmap.favorite_ed);
+                    } else {
+                        ((ItemViewHolder) holder).collect.setImageDrawable(null);
+                    }
 
-        }
-        holder.imageView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (fragment != null) {
-                    int pos = (int) v.getTag();
-                    Cursor clickCursor = (Cursor) getItem(pos);
-                    ((OnClickListener) (fragment)).click(pos, clickCursor);
+                    ((ItemViewHolder) holder).imageView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (fragment != null) {
+                                int pos = (int) v.getTag();
+                                Cursor clickCursor = (Cursor) getItem(pos);
+                                ((OnClickListener) (fragment)).click(pos, clickCursor);
+                            }
+
+                        }
+                    });
                 }
-
             }
-        });
+        } else if (getItemViewType(position) == ITEM_TYPE_FOOTERVIEW) {
+            //
+            if (holder instanceof FooterViewHolder) {
+                ((FooterViewHolder) holder).mContent.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Log.i(TAG, "loadMore click..");
+                        if (fragment != null) {
+                            fragment.loadMore(3);
+                        }
+                    }
+                });
+            }
+        }
+
 
     }
 
@@ -171,7 +222,7 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
         super.setHasStableIds(true);
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
+    public static class ItemViewHolder extends RecyclerView.ViewHolder {
 
         public ImageView imageView;
         public ImageView collect;
@@ -179,12 +230,24 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<MovieCursorAdapter.
         public RatingBar mVoteaverage;
 
 
-        public ViewHolder(View itemView) {
+        public ItemViewHolder(View itemView) {
             super(itemView);
             imageView = (ImageView) itemView.findViewById(R.id.movie_poster);
             collect = (ImageView) itemView.findViewById(R.id.collect);
             mTitle = (TextView) itemView.findViewById(R.id.title);
             mVoteaverage = (RatingBar) itemView.findViewById(R.id.voteAverage);
+        }
+    }
+
+    public static class FooterViewHolder extends RecyclerView.ViewHolder {
+
+        private LinearLayout mContent;
+        private TextView mTextView;
+
+        public FooterViewHolder(View itemView) {
+            super(itemView);
+            mContent = (LinearLayout) itemView.findViewById(R.id.content);
+            mTextView = (TextView) itemView.findViewById(R.id.textview);
         }
     }
 

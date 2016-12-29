@@ -1,9 +1,11 @@
 package yaoxin.example.com.popularmoves.fragment;
 
 
+import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.graphics.Canvas;
@@ -39,18 +41,23 @@ import yaoxin.example.com.popularmoves.R;
 import yaoxin.example.com.popularmoves.SettingActivity;
 import yaoxin.example.com.popularmoves.data.MovieContract;
 import yaoxin.example.com.popularmoves.data.MovieEntry;
+import yaoxin.example.com.popularmoves.data.MovieTypeEntry;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.fragment.support.MovieCursorAdapter;
 import yaoxin.example.com.popularmoves.fragment.support.OnClickListener;
+import yaoxin.example.com.popularmoves.fragment.support.OnLoadMoreListener;
+import yaoxin.example.com.popularmoves.sync.MovieSyncAdapter;
 import yaoxin.example.com.popularmoves.utils.Utils;
+
+import static yaoxin.example.com.popularmoves.sync.MovieSyncAdapter.LOADFINISHACTION;
 
 /**
  * A simple {@link Fragment} subclass.
  */
 public class DisplayFragment extends Fragment implements android.support.v4.app.LoaderManager.LoaderCallbacks<Cursor>,
-        OnClickListener {
+        OnClickListener, OnLoadMoreListener {
 
-    private static final String DISPLAYFRAGMENT = "DisplayFragment";
+    private static final String TAG = "DisplayFragment";
 
     private static final int REQUESTCODE_SETTINGACTIVITY = 10;
     private static final int RESULTCODE_SETTINGACTIVITY_SORTPOPULAR = 301;
@@ -63,13 +70,13 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     private int mPosition = ListView.INVALID_POSITION;
 
     public static final String[] CONTRACT_MOVIE_PROJECTIONS = new String[]{
-            /*MovieEntry.TABLE_NAME + "." +*/ MovieEntry._ID,
+            MovieEntry.TABLE_NAME + "." + MovieEntry._ID,
             MovieEntry.TITLE,
             MovieEntry.MOVIEID,
             MovieEntry.POSTURL,
             MovieEntry.BACKDROPURL,
             MovieEntry.OVERVIEW,
-            MovieEntry.VOTEAVERAGE,
+            MovieEntry.TABLE_NAME + "." + MovieEntry.VOTEAVERAGE,
             MovieEntry.REALEASEDATE,
             MovieEntry.RUNTIME,
             MovieEntry.POPULARITY,
@@ -98,6 +105,8 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     private TextView mPleaseOnline;
     private ProgressBar mProgressBar;
     MovieCursorAdapter mCursorAdapter;
+
+    private int mCurrentPage = 1;
 
     private String base_url;
     private String apikey;
@@ -175,13 +184,39 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 //        mRecyclerView.addItemDecoration(new SpaceItemDecoration(getActivity()));
         mCursorAdapter = new MovieCursorAdapter(getActivity(), null, this);
         mRecyclerView.setAdapter(mCursorAdapter);
-
-        ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-        task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(false));
+        setFooterView(mRecyclerView);
+//        ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
+//        task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(false));
 
         return view;
     }
 
+    private BroadcastReceiver loadFinishReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (LOADFINISHACTION.equals(intent.getAction())) {
+//                getLoaderManager().restartLoader(LoderId, null, DisplayFragment.this);
+                if (mProgressBar != null) {
+                    mProgressBar.setVisibility(View.GONE);
+                }
+            }
+        }
+    };
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter(LOADFINISHACTION);
+        getActivity().registerReceiver(loadFinishReceiver, filter);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (loadFinishReceiver != null) {
+            getActivity().unregisterReceiver(loadFinishReceiver);
+        }
+    }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
@@ -195,8 +230,8 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         int itemId = item.getItemId();
         switch (itemId) {
             case R.id.menu_refresh://刷新
-                ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
-                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(true));
+//                ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
+//                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(true));
                 return true;
             case R.id.menu_setting://设置
                 Intent intent = new Intent(getActivity(), SettingActivity.class);
@@ -236,17 +271,25 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTPOPULAR) {//popular
             ContentResolver resolver = getActivity().getContentResolver();
-            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
-                    null, null, MovieEntry.DEFAULT_SORT_ORDER);
+            String sql = "SELECT * FROM " + MovieEntry.TABLE_NAME + "," + MovieTypeEntry.TABLENAME + " WHERE " + MovieEntry.MOVIEID
+                    + "=" + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.POPULAR + "=1";
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
+                            "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "."
+                            + MovieTypeEntry.POPULAR + "=1", null, MovieEntry.POPULARITY_SORT_ORDER);
             if (cursor != null && cursor.moveToFirst()) {
                 mCursorAdapter.changeCursor(cursor);
+            } else {
+                MovieSyncAdapter.syncImmediately(getActivity(), 0, mCurrentPage);
             }
         } else if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTVOTEAVERAGE) {//voteaverage
             ContentResolver resolver = getActivity().getContentResolver();
-            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
-                    null, null, MovieEntry.VOTEAVERAGE_SORT_ORDER);
+            Cursor cursor = resolver.query(MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME + "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "." + MovieTypeEntry.VOTEAVERAGE + "=1", null, MovieEntry.VOTEAVERAGE_SORT_ORDER);
             if (cursor != null && cursor.moveToFirst()) {
                 mCursorAdapter.changeCursor(cursor);
+            } else {
+                MovieSyncAdapter.syncImmediately(getActivity(), 1, mCurrentPage);
             }
 
 
@@ -256,15 +299,25 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
+        Log.i(TAG, "onCreateLoader");
         String selection = null;
         String[] selectionArgs = null;
         String way = Utils.getInstance().getSortway(getActivity()).split("_")[1];
         String sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
-        if ("0".equals(way)) {
+        if ("0".equals(way)) {//popular
             sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
-        } else if ("1".equals(way)) {
+            return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
+                            "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "."
+                            + MovieTypeEntry.POPULAR + "=1", null, sortOrder);
+        } else if ("1".equals(way)) {//voteaverage
             sortOrder = MovieEntry.VOTEAVERAGE_SORT_ORDER;
+            return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                    MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
+                            "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "." +
+                            MovieTypeEntry.VOTEAVERAGE + "=1", null, sortOrder);
         }
+
         return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
                 selection, selectionArgs, sortOrder);
     }
@@ -275,11 +328,22 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
      */
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        Log.i(TAG, "onLoadFinished");
         mCursorAdapter.swapCursor(data);
         if (mPosition != ListView.INVALID_POSITION) {
             mRecyclerView.smoothScrollToPosition(mPosition);
         }
+        Intent intent = new Intent();
+        intent.setAction(LOADFINISHACTION);
+        getActivity().sendBroadcast(intent);
 
+        System.out.println("data==null? "+data==null?"yes":"no");
+        if (data != null && data.moveToFirst()) {
+//            data.moveToFirst();
+//            String movieid = data.getString(1);
+            Log.i(TAG, "rawCount==" + data.getCount());
+//            Log.i(TAG, "movieId...." + movieid);
+        }
     }
 
     @Override
@@ -287,6 +351,11 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         mCursorAdapter.swapCursor(null);
     }
 
+    private void setFooterView(RecyclerView view) {
+        View footerView = LayoutInflater.from(getActivity()).inflate(R.layout.item_footview_loadmore, view, false);
+
+        mCursorAdapter.setFooterView(footerView);
+    }
 
     /**
      * 点击进入详情页
@@ -296,7 +365,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
      */
     @Override
     public void click(int position, Cursor cursor) {
-        Log.i(DISPLAYFRAGMENT, "onClick");
+        Log.i(TAG, "onClick");
         Intent intent = new Intent(getActivity(), DetailActivity.class);
         Move move = new Move();
         if (cursor != null) {
@@ -313,9 +382,21 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             move.setGenres(cursor.getString(COL_MOVIE_GENRES));
         }
 //        cursor.close();
-        Log.i(DISPLAYFRAGMENT, "moveCursor::" + cursor.toString());
+        Log.i(TAG, "moveCursor::" + cursor.toString());
         intent.putExtra("move", move);
         startActivity(intent);
+    }
+
+    /**
+     * 加载更多
+     *
+     * @param page
+     */
+    @Override
+    public void loadMore(int page) {
+        Log.i(TAG, "page=" + page);
+        mCurrentPage = page;
+        MovieSyncAdapter.syncImmediately(getActivity(), 1, page);
     }
 
     /**

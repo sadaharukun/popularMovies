@@ -1,5 +1,6 @@
 package yaoxin.example.com.popularmoves;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -11,10 +12,14 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.FrameLayout;
 
+import com.google.android.gms.gcm.GcmReceiver;
+
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.ItemFragment;
 import yaoxin.example.com.popularmoves.fragment.RefreshListener;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
+import yaoxin.example.com.popularmoves.sync.MovieSyncAdapter;
+import yaoxin.example.com.popularmoves.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements ItemFragment.OnListFragmentInteractionListener {
 
@@ -37,24 +42,41 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        MovieSyncAdapter.createAccount(this);
+
         mContentView = (FrameLayout) this.findViewById(R.id.frame_content);
 //        ItemFragment fragment = ItemFragment.newInstance(popularurl, apikey, 2);
-        DisplayFragment fragment = DisplayFragment.newInstance(popularurl,apikey,2);
+        DisplayFragment fragment = DisplayFragment.newInstance(popularurl, apikey, 2);
         manager = this.getSupportFragmentManager();
         FragmentTransaction transaction = manager.beginTransaction();
         transaction.replace(R.id.frame_content, fragment, ITEMFRAGMENTTAG);
         transaction.commit();
+
+
+//        MovieSyncAdapter.syncImmediately(this, 0, 1);
+
+        Utils.getInstance().showMovieNotification(this, getString(R.string.app_name), "this is a test",
+                R.mipmap.moive, R.mipmap.moive, "ticker ticker", 2);
+
+
     }
+
+    private BroadcastReceiver mGCMReceiver;
 
     @Override
     protected void onStart() {
         super.onStart();
 
 
-//        Intent intent = new Intent(this, MovieServices.class);
+//        Intent intent = new Intent(this, MovieSyncServices.class);
 //        intent.setPackage();
 //        this.startService(intent);
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @Override
@@ -130,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         return netInfo != null && netInfo.isConnected();
     }
 
+
     public RefreshListener refreshListener;
 
     public RefreshListener getRefreshListener() {
@@ -138,5 +161,14 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
 
     public void setRefreshListener(RefreshListener refreshListener) {
         this.refreshListener = refreshListener;
+    }
+
+    public class MyGCMReceiver extends GcmReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+
+        }
     }
 }

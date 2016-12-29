@@ -2,7 +2,9 @@ package yaoxin.example.com.popularmoves;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
@@ -31,6 +33,7 @@ public class SettingActivity extends AppCompatActivity {
     private ListView listview;
     private BaseAdapter mAdapter;
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,6 +49,7 @@ public class SettingActivity extends AppCompatActivity {
         mToolbar.setTitle(getString(R.string.setting));
         setSupportActionBar(mToolbar);
         mToolbar.setNavigationIcon(R.mipmap.back);
+        mToolbar.setElevation(2f);
 //        mToolbar.setNavigationIcon(null);
 
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {

@@ -41,13 +41,13 @@ public class ReviewsListView extends ListView {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 this.y = y;
-                Log.i(TAG, TAG + "dispatchTouchEvent....Down");
+                Log.i(TAG, TAG + " dispatchTouchEvent....Down");
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.i(TAG, TAG + "dispatchTouchEvent....Move");
+                Log.i(TAG, TAG + " dispatchTouchEvent....Move");
                 break;
             case MotionEvent.ACTION_UP:
-                Log.i(TAG, TAG + "dispatchTouchEvent....Up");
+                Log.i(TAG, TAG + " dispatchTouchEvent....Up");
                 break;
         }
 
@@ -61,14 +61,14 @@ public class ReviewsListView extends ListView {
         switch (ev.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 this.y = y;
-                Log.i(TAG, TAG + "onTouchEvent....Down");
+                Log.i(TAG, TAG + " onTouchEvent....Down");
                 break;
             case MotionEvent.ACTION_MOVE:
-                Log.i(TAG, TAG + "onTouchEvent....Move");
+                Log.i(TAG, TAG + " onTouchEvent....Move");
                 break;
             case MotionEvent.ACTION_UP:
 
-                Log.i(TAG, TAG + "onTouchEvent....Up");
+                Log.i(TAG, TAG + " onTouchEvent....Up");
                 break;
         }
 

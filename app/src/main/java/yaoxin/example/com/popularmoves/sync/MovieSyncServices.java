@@ -9,7 +9,7 @@ import android.support.annotation.Nullable;
  * Created by yaoxinxin on 2016/12/2.
  */
 
-public class MovieServices extends Service {
+public class MovieSyncServices extends Service {
 
     private static final Object MovieAdapterLock = new Object();
     private static MovieSyncAdapter mMovieSyncAdapter ;
@@ -27,12 +27,12 @@ public class MovieServices extends Service {
 
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return super.onStartCommand(intent, flags, startId);
-
-
-    }
+//    @Override
+//    public int onStartCommand(Intent intent, int flags, int startId) {
+//        return super.onStartCommand(intent, flags, startId);
+//
+//
+//    }
 
     @Nullable
     @Override

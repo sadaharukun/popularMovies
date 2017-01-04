@@ -9,6 +9,9 @@ import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
 import android.view.Gravity;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Toast;
 
@@ -25,8 +28,11 @@ public class Utils {
     private static final String MovieCollected = "movieCollected";
 
     public static final String SORTWAYKEY = "sortway";
-    public static final String POPULARWAY = "sortway_0";
-    public static final String VOTEAVERAGEWAY = "sortway_1";
+    public static final String POPULARWAY = "sortway_pop";
+    public static final String VOTEAVERAGEWAY = "sortway_ro";
+
+    public static final String POPULARCURRENTPAGE = "popularCurrentPage";
+    public static final String VOTECURRENTPAGE = "voteCurrentPage";
 
     public static final int NOTIFICATIONID = 10;
     private static final int PENDINGINTENTREQUESTCODE = 0;
@@ -51,50 +57,50 @@ public class Utils {
         return instance;
     }
 
-    public void setMovieCollected(Context c, boolean collected) {
+    public static void setMovieCollected(Context c, boolean collected) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putBoolean(MovieCollected, collected);
         editor.apply();
     }
 
-    public Boolean IsMovieCollected(Context c) {
+    public static Boolean IsMovieCollected(Context c) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         return sp.getBoolean(MovieCollected, false);
     }
 
-    public void setSortway(Context c, String sort) {
+    public static void setSortway(Context c, String sort) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(SORTWAYKEY, sort);
         editor.apply();
     }
 
-    public String getSortway(Context c) {
+    public static String getSortway(Context c) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         return sp.getString(SORTWAYKEY, POPULARWAY);
     }
 
-    public void setString(Context c, String key, String value) {
+    public static void setString(Context c, String key, String value) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putString(key, value);
         editor.apply();
     }
 
-    public String getString(Context c, String key, String defaultValue) {
+    public static String getString(Context c, String key, String defaultValue) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         return sp.getString(key, defaultValue);
     }
 
-    public void setBoolean(Context c, String key, boolean value) {
+    public static void setBoolean(Context c, String key, boolean value) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sp.edit();
         editor.putBoolean(key, value);
         editor.apply();
     }
 
-    public Boolean getBoolean(Context c, String key, boolean defaultvalue) {
+    public static Boolean getBoolean(Context c, String key, boolean defaultvalue) {
         SharedPreferences sp = c.getSharedPreferences(SHAREDNAME, Context.MODE_PRIVATE);
         return sp.getBoolean(key, defaultvalue);
     }
@@ -109,7 +115,7 @@ public class Utils {
         toast.show();
     }
 
-    public void showMovieNotification(Context c, String title, String text, int iconRes, int largeIconRes, String ticker, int number) {
+    public static void showMovieNotification(Context c, String title, String text, int iconRes, int largeIconRes, String ticker, int number) {
         Intent intent = new Intent(c, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(c, PENDINGINTENTREQUESTCODE, intent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -135,13 +141,17 @@ public class Utils {
     }
 
 
-    public int[] getScreenWidthAndHeight(Context c) {
+    public static int[] getScreenWidthAndHeight(Context c) {
         int wh[] = new int[2];
         WindowManager windowManager = (WindowManager) c.getSystemService(Context.WINDOW_SERVICE);
         wh[0] = windowManager.getDefaultDisplay().getWidth();
         wh[1] = windowManager.getDefaultDisplay().getHeight();
 //        DisplayMetrics metrics = new DisplayMetrics();
         return wh;
+    }
+
+    public static View inflateView(Context c, int ResId, ViewGroup parent) {
+        return LayoutInflater.from(c).inflate(ResId, parent, false);
     }
 
 

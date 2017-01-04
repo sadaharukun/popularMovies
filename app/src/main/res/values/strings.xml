@@ -16,4 +16,7 @@
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="loadMore">加载更多</string>
+    <string name="share">分享</string>
+    <string name="nfc">NFC</string>
+    <string name="loadfail">加载失败</string>
 </resources>

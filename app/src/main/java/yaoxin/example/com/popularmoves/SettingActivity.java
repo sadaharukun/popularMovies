@@ -21,6 +21,8 @@ import java.util.List;
 
 import yaoxin.example.com.popularmoves.utils.Utils;
 
+import static yaoxin.example.com.popularmoves.utils.Utils.setSortway;
+
 /**
  * 排序方式
  */
@@ -64,13 +66,13 @@ public class SettingActivity extends AppCompatActivity {
                 if (position == 0) {//最受欢迎
                     Intent intent = new Intent();
                     SettingActivity.this.setResult(SORT_POPULAR, intent);
-                    Utils.getInstance().setSortway(SettingActivity.this, Utils.POPULARWAY);
+                    Utils.setSortway(SettingActivity.this, Utils.POPULARWAY);
                     finish();
 
                 } else if (position == 1) {//评分最高
                     Intent intent = new Intent();
                     SettingActivity.this.setResult(SORT_VOTE, intent);
-                    Utils.getInstance().setSortway(SettingActivity.this, Utils.VOTEAVERAGEWAY);
+                    setSortway(SettingActivity.this, Utils.VOTEAVERAGEWAY);
                     finish();
                 } else {
 
@@ -122,7 +124,13 @@ public class SettingActivity extends AppCompatActivity {
             }
             String way = mData.get(position);
             holder.mTextView.setText(way);
-            int pos = Integer.parseInt(Utils.getInstance().getSortway(c).split("_")[1]);
+            int pos = 0;
+            String sortway = Utils.getSortway(c);
+            if (Utils.POPULARWAY.equals(sortway)) {
+                pos = 0;
+            } else {
+                pos = 1;
+            }
             holder.mImageView.setImageDrawable(null);
             if (position == pos) {
                 holder.mImageView.setImageResource(R.mipmap.chose);

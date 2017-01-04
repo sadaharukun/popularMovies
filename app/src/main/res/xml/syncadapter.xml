@@ -5,5 +5,5 @@
     android:contentAuthority="@string/content_authority"
     android:isAlwaysSyncable="true"
     android:supportsUploading="false"
-    android:userVisible="false" />
+    android:userVisible="true" />
 

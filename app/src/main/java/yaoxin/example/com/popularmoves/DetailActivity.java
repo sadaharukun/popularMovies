@@ -14,9 +14,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageView;
@@ -173,34 +176,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 return false;
             }
         });
-//        mListView.setOnTouchListener(new View.OnTouchListener() {
-//            float y;
-//
-//            @Override
-//            public boolean onTouch(View v, MotionEvent event) {
-//                float y = event.getRawY();
-//                Log.i(TAG, "y==" + y);
-//                switch (event.getAction()) {
-//                    case MotionEvent.ACTION_DOWN:
-//                        this.y = y;
-//                        break;
-//                    case MotionEvent.ACTION_MOVE:
-//
-//                        break;
-//                    case MotionEvent.ACTION_UP:
-//                        if (Math.abs(this.y - y) > 50) {
-//                            Log.i(TAG,">50");
-//                            return true;
-//                        }
-//                        break;
-//                    case MotionEvent.ACTION_CANCEL:
-//                        break;
-//                }
-//
-//
-//                return false;
-//            }
-//        });
 
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
@@ -268,7 +243,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     public boolean dispatchTouchEvent(MotionEvent ev) {
 
 
-
         return super.dispatchTouchEvent(ev);
     }
 
@@ -317,6 +291,46 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
     }
 
+
+    private android.support.v7.widget.ShareActionProvider mShareActionProvider;
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.detail_menu, menu);
+        MenuItem item = menu.findItem(R.id.item_menu_share);
+        mShareActionProvider = (android.support.v7.widget.ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        shareMovie();
+        return true;
+    }
+
+    private void shareMovie() {
+        String movieId = "";
+        String title = "";
+        String youtubeKey = "";
+        ContentResolver resolver = this.getContentResolver();
+        if (move != null) {
+            movieId = move.getMoveId();
+            title = move.getTitle();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_VIDEOS_URI, new String[]{VideosEntry.VIDEO_KEYS}, VideosEntry.MOVIE_ID + "=?",
+                    new String[]{movieId}, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                String keys = cursor.getString(0);
+                if (keys.contains("#")) {
+                    youtubeKey = keys.split("#")[0];
+                } else {
+                    youtubeKey = keys;
+                }
+            }
+        }
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, title +" "+ base_youtube_url + youtubeKey);
+        shareIntent.setType("text/plain");
+        Log.i(TAG, "share click..");
+        mShareActionProvider.setShareIntent(shareIntent);
+    }
+
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
@@ -332,11 +346,15 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
         mAdapter.swapCursor(data);
-
+        if (mShareActionProvider != null) {
+            shareMovie();
+        }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         mAdapter.swapCursor(null);
     }
+
+
 }

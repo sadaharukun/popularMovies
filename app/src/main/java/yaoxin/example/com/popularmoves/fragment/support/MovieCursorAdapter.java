@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.RatingBar;
 import android.widget.TextView;
 
@@ -30,7 +31,10 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     private static final String TAG = "MovieCursorAdapter";
 
     private static final int ITEM_TYPE_NORMAL = 0;
-    private static final int ITEM_TYPE_FOOTERVIEW = 1;
+    public static final int ITEM_TYPE_FOOTERVIEW = 1;//before loading  or  load success
+    public static final int ITEM_TYPE_FOOTERVIEW_LOADING = 2;//loading
+    public static final int ITEM_TYPE_FOOTERVIEW_FAIL = 3;//fail
+    private int type;
 
     private View mFooterView;
 
@@ -72,7 +76,13 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         if (mDataValid && mCursor != null) {
 //            Log.i(TAG, "count = " + mCursor.getColumnCount());
             if (mFooterView != null) {
-                return mCursor.getCount() + 1;
+
+                if (mCursor.getCount() % 2 == 0) {
+
+                    return mCursor.getCount() + 1;
+                } else {
+                    return mCursor.getCount() + 2;
+                }
             } else {
                 return mCursor.getCount();
             }
@@ -133,16 +143,35 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         return oldCursor;
     }
 
-    public void setFooterView(View footerView) {
-        this.mFooterView = footerView;
-        notifyItemInserted(getItemCount() - 1);
+
+    public void setFooterView(View footerView, int type) {
+        if (this.mFooterView == null) {
+            this.mFooterView = footerView;
+            this.type = type;
+            notifyItemInserted(getItemCount() - 1);
+        } else {
+            this.mFooterView = footerView;
+            this.type = type;
+            notifyItemChanged(getItemCount() - 1);
+        }
     }
 
     @Override
     public int getItemViewType(int position) {
-        if (mFooterView != null) {
-            if (position == getItemCount() - 1) {
-                return ITEM_TYPE_FOOTERVIEW;
+//        if (mFooterView != null) {
+//            if (position == getItemCount() - 1) {
+//                return ITEM_TYPE_FOOTERVIEW;
+//            }
+//        }
+        if (position == getItemCount() - 1) {
+            if (mFooterView != null) {
+                if (type == ITEM_TYPE_FOOTERVIEW) {
+                    return ITEM_TYPE_FOOTERVIEW;
+                } else if (type == ITEM_TYPE_FOOTERVIEW_LOADING) {
+                    return ITEM_TYPE_FOOTERVIEW_LOADING;
+                } else if (type == ITEM_TYPE_FOOTERVIEW_FAIL) {
+                    return ITEM_TYPE_FOOTERVIEW_FAIL;
+                }
             }
         }
         return ITEM_TYPE_NORMAL;
@@ -151,15 +180,22 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
 
+        Log.i(TAG, "onCreateViewHolder.");
         if (viewType == ITEM_TYPE_NORMAL) {
             View itemView = LayoutInflater.from(mC).inflate(R.layout.fragment_item, parent, false);
             ItemViewHolder holder = new ItemViewHolder(itemView);
             return holder;
-        } else if (viewType == ITEM_TYPE_FOOTERVIEW) {
+        } else if (viewType == ITEM_TYPE_FOOTERVIEW || viewType == ITEM_TYPE_FOOTERVIEW_FAIL) {
             RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) mFooterView.getLayoutParams();
-            params.width = Utils.getInstance().getScreenWidthAndHeight(mC)[0];
+            params.width = Utils.getScreenWidthAndHeight(mC)[0];
             mFooterView.setLayoutParams(params);
             RecyclerView.ViewHolder footerViewHolder = new FooterViewHolder(mFooterView);
+            return footerViewHolder;
+        } else if (viewType == ITEM_TYPE_FOOTERVIEW_LOADING) {
+            RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) mFooterView.getLayoutParams();
+            params.width = Utils.getScreenWidthAndHeight(mC)[0];
+            mFooterView.setLayoutParams(params);
+            RecyclerView.ViewHolder footerViewHolder = new FooterViewLoadingHolder(mFooterView);
             return footerViewHolder;
         }
         return null;
@@ -167,8 +203,10 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
 
     @Override
-    public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+    public void onBindViewHolder(final RecyclerView.ViewHolder holder, final int position) {
 
+        Log.i(TAG, "onBindViewHolder..");
+        int type = getItemViewType(position);
         if (getItemViewType(position) == ITEM_TYPE_NORMAL) {
             final Cursor cursor = (Cursor) getItem(position);
             if (cursor != null) {
@@ -178,7 +216,7 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     ((ItemViewHolder) holder).imageView.setTag(position);
                     ((ItemViewHolder) holder).mTitle.setText(cursor.getString(DisplayFragment.COL_MOVIE_TITLE));
                     ((ItemViewHolder) holder).mVoteaverage.setRating((float) (Double.parseDouble(cursor.getString(DisplayFragment.COL_MOVIE_VOTEAVERAGE)) / 2));
-                    Picasso.with(mC).load(base_url + postUrl).placeholder(R.mipmap.ic_launcher).into(((ItemViewHolder) holder).imageView);
+                    Picasso.with(mC).load(base_url + postUrl).placeholder(R.mipmap.movie_default).into(((ItemViewHolder) holder).imageView);
                     String collected = cursor.getString(DisplayFragment.COL_MOVIE_COLLECTED);
                     if ("1".equals(collected)) {
                         ((ItemViewHolder) holder).collect.setImageResource(R.mipmap.favorite_ed);
@@ -199,7 +237,7 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     });
                 }
             }
-        } else if (getItemViewType(position) == ITEM_TYPE_FOOTERVIEW) {
+        } else if (type == ITEM_TYPE_FOOTERVIEW || type == ITEM_TYPE_FOOTERVIEW_FAIL) {
             //
             if (holder instanceof FooterViewHolder) {
                 ((FooterViewHolder) holder).mContent.setOnClickListener(new View.OnClickListener() {
@@ -207,11 +245,29 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
                     public void onClick(View v) {
                         Log.i(TAG, "loadMore click..");
                         if (fragment != null) {
-                            fragment.loadMore(3);
+//                            ((FooterViewHolder) holder).mProgressBar.setVisibility(View.VISIBLE);
+//                            ((FooterViewHolder) holder).mTextView.setVisibility(View.INVISIBLE);
+
+                            String way = Utils.getSortway(mC);
+                            int page = 1;
+                            int flag = 0;
+                            Log.i(TAG, "sortway==" + way);
+                            if (Utils.POPULARWAY.equals(way)) {
+                                page = Integer.parseInt(Utils.getString(mC, Utils.POPULARCURRENTPAGE, "1"));
+                                flag = 0;
+                            } else if (Utils.VOTEAVERAGEWAY.equals(way)) {
+                                page = Integer.parseInt(Utils.getString(mC, Utils.VOTECURRENTPAGE, "1"));
+                                flag = 1;
+                            }
+                            Log.i(TAG, "page==" + page);
+                            fragment.loadMore(page, flag);
                         }
+
                     }
                 });
             }
+        } else if (type == ITEM_TYPE_FOOTERVIEW_LOADING) {
+            ((FooterViewLoadingHolder) holder).mContent.setClickable(false);
         }
 
 
@@ -243,11 +299,24 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
 
         private LinearLayout mContent;
         private TextView mTextView;
+//        private ProgressBar mProgressBar;
 
         public FooterViewHolder(View itemView) {
             super(itemView);
             mContent = (LinearLayout) itemView.findViewById(R.id.content);
             mTextView = (TextView) itemView.findViewById(R.id.textview);
+//            mProgressBar = (ProgressBar) itemView.findViewById(R.id.progressbar);
+        }
+    }
+
+    public static class FooterViewLoadingHolder extends RecyclerView.ViewHolder {
+        public LinearLayout mContent;
+        public ProgressBar mProgressBar;
+
+        public FooterViewLoadingHolder(View itemView) {
+            super(itemView);
+            mContent = (LinearLayout) itemView.findViewById(R.id.content);
+            mProgressBar = (ProgressBar) itemView.findViewById(R.id.progressbar);
         }
     }
 

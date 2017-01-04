@@ -6,5 +6,5 @@ package yaoxin.example.com.popularmoves.fragment.support;
 
 public interface OnLoadMoreListener {
 
-    void loadMore(int page);
+    void loadMore(int page,int way);
 }

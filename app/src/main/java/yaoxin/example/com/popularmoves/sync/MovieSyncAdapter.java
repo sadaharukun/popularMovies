@@ -1,7 +1,6 @@
 package yaoxin.example.com.popularmoves.sync;
 
 import android.accounts.Account;
-import android.accounts.AccountManager;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
@@ -15,21 +14,20 @@ import android.os.Bundle;
 import android.util.Log;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
 import yaoxin.example.com.popularmoves.MovieApplication;
-import yaoxin.example.com.popularmoves.R;
 import yaoxin.example.com.popularmoves.data.MovieContract;
 import yaoxin.example.com.popularmoves.data.MovieEntry;
+import yaoxin.example.com.popularmoves.data.MovieTypeEntry;
+import yaoxin.example.com.popularmoves.utils.SyncUtils;
 
 /**
  * Created by yaoxinxin on 2016/12/1.
@@ -86,6 +84,7 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
             path = voteUrl + MovieApplication.APIKEY + SEPARATOR + "page=" + page;
         }
         InputStreamReader reader = null;
+
         try {
             URL url = new URL(path);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -113,24 +112,24 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
                         String moveId = String.valueOf(object.optInt("id"));
 
                         //update table movieType(popular,votevrage)
-//                        Cursor cursor = resolver.query(MovieContract.CONTENT_TYPE_URI, new String[]{MovieTypeEntry._ID},
-//                                MovieTypeEntry.MOVIEID + "=?", new String[]{moveId}, null);
-//                        ContentValues values1 = new ContentValues();
-//                        if (flag == 0) {
-//                            values1.put(MovieTypeEntry.POPULAR, "1");
-//                        } else if (flag == 1) {
-//                            values1.put(MovieTypeEntry.VOTEAVERAGE, "1");
-//                        }
-//                        if (cursor != null && cursor.moveToFirst()) {
-//                            resolver.update(MovieContract.CONTENT_TYPE_URI, values1, MovieTypeEntry.MOVIEID + "=?", new String[]{moveId});
-//                        } else {
-//                            values1.put(MovieTypeEntry.MOVIEID, moveId);
-//                            resolver.insert(MovieContract.CONTENT_TYPE_URI, values1);
-//                        }
+                        Cursor cursor = resolver.query(MovieContract.CONTENT_TYPE_URI, new String[]{MovieTypeEntry._ID},
+                                MovieTypeEntry.MOVIEID + "=?", new String[]{moveId}, null);
+                        ContentValues values1 = new ContentValues();
+                        if (flag == 0) {
+                            values1.put(MovieTypeEntry.POPULAR, "1");
+                        } else if (flag == 1) {
+                            values1.put(MovieTypeEntry.VOTEAVERAGE, "1");
+                        }
+                        if (cursor != null && cursor.moveToFirst()) {
+                            resolver.update(MovieContract.CONTENT_TYPE_URI, values1, MovieTypeEntry.MOVIEID + "=?", new String[]{moveId});
+                        } else {
+                            values1.put(MovieTypeEntry.MOVIEID, moveId);
+                            resolver.insert(MovieContract.CONTENT_TYPE_URI, values1);
+                        }
 
-                        Cursor cur = resolver.query(MovieContract.CONTENT_MOVE_URI, new String[]{MovieEntry._ID},
-                                MovieEntry.MOVIEID + "=?", new String[]{moveId}, null);
-                        if (cur != null && cur.moveToFirst()) {
+//                        Cursor cur = resolver.query(MovieContract.CONTENT_MOVE_URI, new String[]{MovieEntry._ID},
+//                                MovieEntry.MOVIEID + "=?", new String[]{moveId}, null);
+                        if (cursor != null && cursor.moveToFirst()) {
                             continue;
                         }
                         ContentValues values = new ContentValues();
@@ -159,14 +158,21 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
                         values.put(MovieEntry.GENRES, genres.toString());
                         valuesList.add(values);
 
-                        cur.close();
+                        cursor.close();
                     }
                     Log.d(TAG, "result.length==" + valuesList.size());
                     int num = resolver.bulkInsert(MovieContract.CONTENT_MOVE_URI, valuesList.toArray(new ContentValues[valuesList.size()]));
                     if (num < 0) {
                         throw new SQLiteException("insert error..");
                     }
-//                    sendLoadfinshBroadcast(c);
+                    page += 1;
+                    Log.i(TAG, "currentpage==" + page);
+                    sendLoadfinshBroadcast(c, page);
+//                    if (flag == 0) {
+//                        Utils.setString(c, Utils.POPULARCURRENTPAGE, String.valueOf(page));
+//                    } else {
+//                        Utils.setString(c, Utils.VOTECURRENTPAGE, String.valueOf(page));
+//                    }
                     return;
                 }
             } else {
@@ -174,17 +180,10 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
                 return;
 
             }
-        } catch (MalformedURLException e) {
+        } catch (Exception e) {
+            sendLoadFailBroadcast(c);
             e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-//        catch (RemoteException e) {
-//            e.printStackTrace();
-//        }
-        finally {
+        } finally {
             if (reader != null) {
                 try {
                     reader.close();
@@ -204,100 +203,24 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
     public static Account createAccount(Context c) {
-        Account newAccount = new Account(c.getString(R.string.app_name), c.getString(R.string.account_type));
-        AccountManager accountManager = (AccountManager) c.getSystemService(Context.ACCOUNT_SERVICE);
-//        if (null == accountManager.getPassword(newAccount)) {
-//
-//            if (!accountManager.addAccountExplicitly(newAccount, c.getString(R.string.account_psw), null)) {
-//                return null;
-//            }
-//
-//            onCreateAccount(newAccount, c);
-//        }
-        if (accountManager.addAccountExplicitly(newAccount, null, null)) {
-            ContentResolver.setIsSyncable(newAccount, c.getString(R.string.content_authority), 1);
-            ContentResolver.setSyncAutomatically(newAccount, c.getString(R.string.content_authority), true);
-            onCreateAccount(newAccount, c);
-        } else {
-            //if account exists or error
-        }
-        return newAccount;
-    }
-
-//    public static Account getAccount(Context c, String accountType) {
-//        AccountManager accountManager = (AccountManager) c.getSystemService(Context.ACCOUNT_SERVICE);
-//        if (ActivityCompat.checkSelfPermission(c, Manifest.permission.GET_ACCOUNTS) != PackageManager.PERMISSION_GRANTED) {
-//            // TODO: Consider calling
-//            //    ActivityCompat#requestPermissions
-//            // here to request the missing permissions, and then overriding
-//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//            //                                          int[] grantResults)
-//            // to handle the case where the user grants the permission. See the documentation
-//            // for ActivityCompat#requestPermissions for more details.
-//            return null;
-//        }
-//        Account[] accounts = accountManager.getAccountsByType(accountType);
-//        if (accounts != null && accounts.length > 0) {
-//            Log.i(TAG, "getaccount...");
-//            return accounts[0];
-//        } else {
-//            return createAccount(c);
-//        }
-//
-//    }
-
-
-    public static void onCreateAccount(Account newAccount, Context c) {
-
-        configurePeriodicSync(c, SYNC_INTERVAL, SYNC_FLEXTIME);
-//        ContentResolver.SYNC_EXTRAS_MANUAL = true;
-//        ContentResolver.setIsSyncable(newAccount, c.getString(R.string.content_authority), 1);
-//        ContentResolver.setSyncAutomatically(newAccount, c.getString(R.string.content_authority), true);
-        syncImmediately(c, 0, 1);
-    }
-
-    public static void configurePeriodicSync(Context context, int syncInterval, int flexTime) {
-        Log.i(TAG, "configurePeriodicSync....");
-        Account account = createAccount(context);
-        String authority = context.getString(R.string.content_authority);
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-//            // we can enable inexact timers in our periodic sync
-//            SyncRequest request = new SyncRequest.Builder().
-//                    syncPeriodic(syncInterval, flexTime).
-//                    setSyncAdapter(account, authority).
-//                    setExtras(new Bundle()).build();
-//            ContentResolver.requestSync(request);
-//        } else {
-        ContentResolver.addPeriodicSync(account,
-                authority, new Bundle(), syncInterval);
-//        }
+        return SyncUtils.createAccount(c);
     }
 
     public static void syncImmediately(Context c, int flag, int page) {
-
-        Account account = createAccount(c);
-        if (ContentResolver.isSyncPending(account, c.getString(R.string.content_authority))
-                || ContentResolver.isSyncActive(account, c.getString(R.string.content_authority))) {
-
-            Log.i("ContentResolver", "SyncPending, canceling");
-            ContentResolver.cancelSync(account, c.getString(R.string.content_authority));
-        }
-
-
-//        Account account = createAccount(c);
-        Bundle bundle = new Bundle();
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true);
-        bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true);
-        bundle.putInt("display_flag", flag);
-        bundle.putInt("display_page", page);
-        ContentResolver.requestSync(account,
-                c.getString(R.string.content_authority), bundle);
-
+        SyncUtils.syncImmediately(c, flag, page);
 
     }
 
-    private void sendLoadfinshBroadcast(Context c) {
+    private void sendLoadfinshBroadcast(Context c, int page) {
         Intent intent = new Intent();
+        intent.putExtra("currentPage", page);
+        intent.setAction(LOADFINISHACTION);
+        c.sendBroadcast(intent);
+    }
+
+    private void sendLoadFailBroadcast(Context c) {
+        Intent intent = new Intent();
+        intent.putExtra("loadSuccess", false);
         intent.setAction(LOADFINISHACTION);
         c.sendBroadcast(intent);
     }

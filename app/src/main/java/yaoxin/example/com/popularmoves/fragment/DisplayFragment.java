@@ -47,6 +47,7 @@ import yaoxin.example.com.popularmoves.fragment.support.MovieCursorAdapter;
 import yaoxin.example.com.popularmoves.fragment.support.OnClickListener;
 import yaoxin.example.com.popularmoves.fragment.support.OnLoadMoreListener;
 import yaoxin.example.com.popularmoves.sync.MovieSyncAdapter;
+import yaoxin.example.com.popularmoves.utils.SyncUtils;
 import yaoxin.example.com.popularmoves.utils.Utils;
 
 import static yaoxin.example.com.popularmoves.sync.MovieSyncAdapter.LOADFINISHACTION;
@@ -195,9 +196,28 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         @Override
         public void onReceive(Context context, Intent intent) {
             if (LOADFINISHACTION.equals(intent.getAction())) {
-//                getLoaderManager().restartLoader(LoderId, null, DisplayFragment.this);
+                getLoaderManager().restartLoader(LoderId, null, DisplayFragment.this);
                 if (mProgressBar != null) {
                     mProgressBar.setVisibility(View.GONE);
+                }
+                int page = intent.getIntExtra("currentPage", 1);
+                if (Utils.POPULARWAY.equals(Utils.getSortway(getActivity()))) {
+                    Utils.setString(getActivity(), Utils.POPULARCURRENTPAGE, page + "");
+                } else {
+                    Utils.setString(getActivity(), Utils.VOTECURRENTPAGE, page + "");
+                }
+
+                if (mCursorAdapter != null) {
+                    mCursorAdapter.setFooterView(Utils.inflateView(getActivity(), R.layout.item_footview_loadmore, mRecyclerView),
+                            MovieCursorAdapter.ITEM_TYPE_FOOTERVIEW);
+                }
+
+                boolean success = intent.getBooleanExtra("loadSuccess", true);
+                if (!success) {//load fail show item_footview_loadfail view
+                    if (mCursorAdapter != null) {
+                        mCursorAdapter.setFooterView(Utils.inflateView(getActivity(), R.layout.item_footview_loadfailed, mRecyclerView),
+                                MovieCursorAdapter.ITEM_TYPE_FOOTERVIEW_FAIL);
+                    }
                 }
             }
         }
@@ -238,28 +258,46 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
                 startActivityForResult(intent, REQUESTCODE_SETTINGACTIVITY);
                 return true;
             case R.id.menu_collect://收藏
-                Utils utils = Utils.getInstance();
-                boolean flag = utils.IsMovieCollected(getActivity());
+                boolean flag = Utils.IsMovieCollected(getActivity());
                 ContentResolver resolver = getActivity().getContentResolver();
                 if (!flag) {
                     Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
                             MovieEntry.COLLECTED + "=?", new String[]{MovieEntry.MOVIE_COLLECTED}, null);
                     if (cursor != null && cursor.moveToFirst()) {
                         mCursorAdapter.changeCursor(cursor);
+
                     } else {
                         mCursorAdapter.changeCursor(null);
                     }
                     item.setTitle("全部");
-                    utils.setMovieCollected(getActivity(), true);
+                    Utils.setMovieCollected(getActivity(), true);
+
                     return true;
                 } else {
-                    Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS, null,
-                            null, MovieEntry.POPULARITY_SORT_ORDER);
-                    if (cursor != null && cursor.moveToFirst()) {
-                        mCursorAdapter.changeCursor(cursor);
+                    String way = Utils.getSortway(this.getActivity());
+                    if (Utils.POPULARWAY.equals(way)) {//popular
+                        Cursor cursor = resolver.query(MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                                MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
+                                        "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "."
+                                        + MovieTypeEntry.POPULAR + "=1",
+                                null, MovieEntry.POPULARITY_SORT_ORDER);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            mCursorAdapter.changeCursor(cursor);
+                        }
+//                        cursor.close();
+                    } else if (Utils.VOTEAVERAGEWAY.equals(way)) {//voterage
+                        Cursor cursor = resolver.query(MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                                MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME
+                                        + "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "."
+                                        + MovieTypeEntry.VOTEAVERAGE + "=1", null, MovieEntry.VOTEAVERAGE_SORT_ORDER);
+                        if (cursor != null && cursor.moveToFirst()) {
+                            mCursorAdapter.changeCursor(cursor);
+                        }
+//                        cursor.close();
                     }
                     item.setTitle(getString(R.string.menu_collected));
-                    utils.setMovieCollected(getActivity(), false);
+                    Utils.setMovieCollected(getActivity(), false);
+                    return true;
                 }
         }
 
@@ -280,7 +318,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             if (cursor != null && cursor.moveToFirst()) {
                 mCursorAdapter.changeCursor(cursor);
             } else {
-                MovieSyncAdapter.syncImmediately(getActivity(), 0, mCurrentPage);
+                MovieSyncAdapter.syncImmediately(getActivity(), 0, 1);
             }
         } else if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTVOTEAVERAGE) {//voteaverage
             ContentResolver resolver = getActivity().getContentResolver();
@@ -289,7 +327,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             if (cursor != null && cursor.moveToFirst()) {
                 mCursorAdapter.changeCursor(cursor);
             } else {
-                MovieSyncAdapter.syncImmediately(getActivity(), 1, mCurrentPage);
+                MovieSyncAdapter.syncImmediately(getActivity(), 1, 1);
             }
 
 
@@ -302,15 +340,16 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         Log.i(TAG, "onCreateLoader");
         String selection = null;
         String[] selectionArgs = null;
-        String way = Utils.getInstance().getSortway(getActivity()).split("_")[1];
+        String way = Utils.getSortway(getActivity());
         String sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
-        if ("0".equals(way)) {//popular
+        if (Utils.POPULARWAY.equals(way)) {//popular
             sortOrder = MovieEntry.POPULARITY_SORT_ORDER;
             return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
                     MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
                             "." + MovieTypeEntry.MOVIEID + " AND " + MovieTypeEntry.TABLENAME + "."
                             + MovieTypeEntry.POPULAR + "=1", null, sortOrder);
-        } else if ("1".equals(way)) {//voteaverage
+//            return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS, null, null, sortOrder);
+        } else if (Utils.VOTEAVERAGEWAY.equals(way)) {//voteaverage
             sortOrder = MovieEntry.VOTEAVERAGE_SORT_ORDER;
             return new CursorLoader(this.getContext(), MovieContract.CONTENT_MOVIE_MOVIEYTPE_URI, CONTRACT_MOVIE_PROJECTIONS,
                     MovieEntry.TABLE_NAME + "." + MovieEntry.MOVIEID + "=" + MovieTypeEntry.TABLENAME +
@@ -333,17 +372,18 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         if (mPosition != ListView.INVALID_POSITION) {
             mRecyclerView.smoothScrollToPosition(mPosition);
         }
-        Intent intent = new Intent();
-        intent.setAction(LOADFINISHACTION);
-        getActivity().sendBroadcast(intent);
-
-        System.out.println("data==null? "+data==null?"yes":"no");
-        if (data != null && data.moveToFirst()) {
-//            data.moveToFirst();
-//            String movieid = data.getString(1);
-            Log.i(TAG, "rawCount==" + data.getCount());
-//            Log.i(TAG, "movieId...." + movieid);
+        if (mProgressBar != null) {
+            mProgressBar.setVisibility(View.GONE);
         }
+//        if (mCursorAdapter != null) {
+//            mCursorAdapter.setFooterView(Utils.inflateView(getActivity(), R.layout.item_footview_loadmore, mRecyclerView));
+//        }
+
+        System.out.println("data==null? " + data == null ? "yes" : "no");
+        if (data != null && data.moveToFirst()) {
+            Log.i(TAG, "rawCount==" + data.getCount());
+        }
+
     }
 
     @Override
@@ -354,7 +394,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     private void setFooterView(RecyclerView view) {
         View footerView = LayoutInflater.from(getActivity()).inflate(R.layout.item_footview_loadmore, view, false);
 
-        mCursorAdapter.setFooterView(footerView);
+        mCursorAdapter.setFooterView(footerView, MovieCursorAdapter.ITEM_TYPE_FOOTERVIEW);
     }
 
     /**
@@ -391,12 +431,18 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
      * 加载更多
      *
      * @param page
+     * @param flag 流行(0)  评分(1)
      */
     @Override
-    public void loadMore(int page) {
+    public void loadMore(int page, int flag) {
         Log.i(TAG, "page=" + page);
         mCurrentPage = page;
-        MovieSyncAdapter.syncImmediately(getActivity(), 1, page);
+        if (mCursorAdapter != null) {
+            View view = Utils.inflateView(getActivity(), R.layout.item_footview_loading, mRecyclerView);
+            view.findViewById(R.id.content).setClickable(false);
+            mCursorAdapter.setFooterView(view, MovieCursorAdapter.ITEM_TYPE_FOOTERVIEW_LOADING);
+        }
+        SyncUtils.syncImmediately(getActivity(), flag, page);
     }
 
     /**

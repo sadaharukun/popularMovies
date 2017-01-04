@@ -52,9 +52,6 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         transaction.replace(R.id.frame_content, fragment, ITEMFRAGMENTTAG);
         transaction.commit();
 
-
-//        MovieSyncAdapter.syncImmediately(this, 0, 1);
-
         Utils.getInstance().showMovieNotification(this, getString(R.string.app_name), "this is a test",
                 R.mipmap.moive, R.mipmap.moive, "ticker ticker", 2);
 

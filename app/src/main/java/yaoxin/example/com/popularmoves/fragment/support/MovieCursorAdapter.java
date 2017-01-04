@@ -156,6 +156,13 @@ public class MovieCursorAdapter extends RecyclerView.Adapter<RecyclerView.ViewHo
         }
     }
 
+    public void removeFooterView() {
+        if (this.mFooterView != null) {
+            this.mFooterView = null;
+            notifyItemRemoved(getItemCount() - 1);
+        }
+    }
+
     @Override
     public int getItemViewType(int position) {
 //        if (mFooterView != null) {

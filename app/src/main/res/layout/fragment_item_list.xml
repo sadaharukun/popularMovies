@@ -28,6 +28,7 @@
         android:layout_marginLeft="10dp"
         android:layout_marginRight="10dp"
         android:layout_marginTop="10dp"
+        android:scrollbars="vertical"
         tools:context="yaoxin.example.com.popularmoves.fragment.ItemFragment"
         tools:listitem="@layout/fragment_item" />
 </RelativeLayout>

@@ -154,5 +154,15 @@ public class Utils {
         return LayoutInflater.from(c).inflate(ResId, parent, false);
     }
 
+    public boolean isNFCUseful(Context c) {
+
+//        if (!PackageManager.(PackageManager.FEATURE_NFC)) {
+//
+//        }
+
+
+        return false;
+    }
+
 
 }

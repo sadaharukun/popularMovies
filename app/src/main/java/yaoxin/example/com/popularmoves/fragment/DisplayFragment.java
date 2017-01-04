@@ -1,6 +1,7 @@
 package yaoxin.example.com.popularmoves.fragment;
 
 
+import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -12,10 +13,12 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.Nullable;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -23,6 +26,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -30,6 +34,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -238,10 +243,50 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
         }
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.itemfragment, menu);
+        searchView(menu);//搜索按钮
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private void searchView(Menu menu) {
+        MenuItem searchMenuItem = menu.findItem(R.id.menu_search);
+        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+        final SearchView searchView = (SearchView) searchMenuItem.getActionView();
+//        searchView.setBackgroundColor(getActivity().getColor(R.color.gray_C));
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getActivity().getComponentName()));
+        searchView.setIconifiedByDefault(true);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                Log.i(TAG, "query.." + query);
+                searchView.setIconified(true);
+                InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputMethodManager.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
+                searchView.clearFocus();
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+//        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+//            @Override
+//            public boolean onClose() {
+//                searchView.setIconified(true);
+//                return true;
+//            }
+//        });
+    }
+
+    /*dialog searchview*/
+    private void searchView(MenuItem item) {
+        getActivity().onSearchRequested();
     }
 
     @Override
@@ -249,6 +294,12 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 
         int itemId = item.getItemId();
         switch (itemId) {
+
+            case R.id.menu_search:
+                Log.i(TAG, "search..");
+                //you can use search dialog here
+//                searchView(item);
+                return true;
             case R.id.menu_refresh://刷新
 //                ParseAsyncTask task = new ParseAsyncTask(handler, getActivity());
 //                task.execute(base_url, ((MainActivity) getActivity()).voteUrl, apikey, String.valueOf(true));
@@ -269,6 +320,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
                     } else {
                         mCursorAdapter.changeCursor(null);
                     }
+                    mCursorAdapter.removeFooterView();
                     item.setTitle("全部");
                     Utils.setMovieCollected(getActivity(), true);
 
@@ -296,6 +348,9 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 //                        cursor.close();
                     }
                     item.setTitle(getString(R.string.menu_collected));
+                    if (mRecyclerView != null) {
+                        setFooterView(mRecyclerView);
+                    }
                     Utils.setMovieCollected(getActivity(), false);
                     return true;
                 }

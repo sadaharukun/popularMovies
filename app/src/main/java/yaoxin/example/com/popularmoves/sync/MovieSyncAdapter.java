@@ -177,6 +177,7 @@ public class MovieSyncAdapter extends AbstractThreadedSyncAdapter {
                 }
             } else {
                 System.out.print("parse failed.....");
+                sendLoadFailBroadcast(c);
                 return;
 
             }

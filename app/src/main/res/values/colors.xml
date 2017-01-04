@@ -6,4 +6,5 @@
     <color name="sunshine_blue">#ff1ca8f4</color>
     <color name="gray_B">#BBBBBB</color>
     <color name="gray_C">#CCCCCC</color>
+    <color name="menu_searchview_bg">#22ff00ff</color>
 </resources>

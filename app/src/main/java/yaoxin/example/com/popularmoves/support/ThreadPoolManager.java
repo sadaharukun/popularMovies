@@ -30,7 +30,7 @@ public class ThreadPoolManager {
 
     private ThreadPoolProxy mThreadPoolProxy;
 
-    private synchronized ThreadPoolProxy creataPool() {
+    public synchronized ThreadPoolProxy creataPool() {
         if (mThreadPoolProxy == null) {
             mThreadPoolProxy = new ThreadPoolProxy(5, 10, 5000L);
         }
@@ -58,7 +58,7 @@ public class ThreadPoolManager {
             this.keepAliveTime = keepAliveTime;
         }
 
-        private void run(Runnable r) {
+        public void run(Runnable r) {
             if (pool == null) {
                 pool = new ThreadPoolExecutor(corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.MILLISECONDS,
                         new LinkedBlockingQueue<Runnable>());
@@ -66,13 +66,13 @@ public class ThreadPoolManager {
             pool.execute(r);
         }
 
-        private void cancel() {
+        public void cancel() {
             if (pool != null && !pool.isShutdown() && !pool.isTerminated()) {
                 pool.shutdown();
             }
         }
 
-        private void remove(Runnable r) {
+        public void remove(Runnable r) {
             if (pool != null && !pool.isShutdown() && !pool.isTerminated()) {
                 pool.remove(r);
             }

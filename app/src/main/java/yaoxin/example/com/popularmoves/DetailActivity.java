@@ -4,10 +4,13 @@ import android.annotation.TargetApi;
 import android.app.LoaderManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -15,13 +18,16 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.view.MenuItemCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -42,6 +48,7 @@ import yaoxin.example.com.popularmoves.data.VideosEntry;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.support.ReviewsAdapter;
+import yaoxin.example.com.popularmoves.support.ThreadPoolManager;
 import yaoxin.example.com.popularmoves.utils.Utils;
 
 import static yaoxin.example.com.popularmoves.R.id.collect;
@@ -57,6 +64,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
     private static final String FAVORITE = "0";
     private static final String FAVORITE_ED = "1";
+    public static final int MSG_SHOWQRCODE = 200;
+    public static final int QRVERSION = 160;
 
     private Loader<Cursor> mLoaderManager;
 
@@ -336,6 +345,23 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         return true;
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.item_menu_qrCode:
+                Log.i(TAG, "qrCode click..");
+                if (move != null) {
+                    Runnable runnable = new VideoRunnable(this, handler);
+                    ThreadPoolManager.newInstance().creataPool().run(runnable);
+                    return true;
+                }
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+
     private void shareMovie() {
         String movieId = "";
         String title = "";
@@ -395,5 +421,63 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mAdapter.swapCursor(null);
     }
 
+    private void showQRCode(Bitmap bitmap, int version) {
+        int size = (version - 1) * 4 + 21;
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final ViewGroup rootView = (ViewGroup) ((ViewGroup) this
+                .findViewById(android.R.id.content)).getChildAt(0);
+        View view = LayoutInflater.from(this).inflate(R.layout.alterdialog_qrcode, rootView, false);
+        ImageView imageView = (ImageView) view.findViewById(R.id.imageQRCode);
+        imageView.setImageBitmap(bitmap);
+        builder.setView(view);
+        builder.setTitle(getString(R.string.video));
+        builder.setCancelable(true);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 
+    private Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == MSG_SHOWQRCODE) {
+                Bitmap bitmap = (Bitmap) msg.obj;
+                showQRCode(bitmap, QRVERSION);
+            }
+
+        }
+    };
+
+    class VideoRunnable implements Runnable {
+        Context c;
+        Handler handler;
+
+        VideoRunnable(Context c, Handler handler) {
+            this.c = c;
+            this.handler = handler;
+        }
+
+        @Override
+        public void run() {
+
+            ContentResolver resolver = c.getContentResolver();
+            Cursor cursor = resolver.query(MovieContract.CONTENT_VIDEOS_URI, new String[]{VideosEntry.VIDEO_KEYS},
+                    VideosEntry.MOVIE_ID + "=?", new String[]{move.getMoveId()}, null);
+            String path = "";
+            if (cursor != null && cursor.moveToFirst()) {
+                String keys = cursor.getString(0);
+                if (keys.contains("#")) {
+                    path = base_youtube_url + keys.split("#")[0];
+                } else {
+                    path = base_youtube_url + keys;
+                }
+//                        Bitmap bitmap = Utils.createQRCode(path, 160);
+                Bitmap bitmap = Utils.createQRCodewithLogo(path, 160, BitmapFactory.decodeResource(getResources(),
+                        R.mipmap.movie_default));
+                handler.obtainMessage(MSG_SHOWQRCODE, bitmap).sendToTarget();
+//                showQRCode(bitmap, 160);
+            }
+        }
+
+
+    }
 }

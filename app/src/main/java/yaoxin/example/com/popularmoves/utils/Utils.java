@@ -7,7 +7,9 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.support.v4.app.NotificationCompat;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -15,6 +17,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
+
+import java.util.Hashtable;
 
 import yaoxin.example.com.popularmoves.MainActivity;
 
@@ -172,17 +183,104 @@ public class Utils {
     }
 
 
+    public static Bitmap createQRCode(String text, int version) {
 
+//        if (version >= 40) {
+//            version = 40;
+//        }
+        int size = (version - 1) * 4 + 21;
+        Hashtable<EncodeHintType, String> hints = new Hashtable<>();
+        hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+        hints.put(EncodeHintType.QR_VERSION, version + "");
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        try {
+            BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, size, size);
+            int[] pixel = new int[size * size];
+            Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    if (bitMatrix.get(i, j)) {
+                        pixel[i * size + j] = 0xff000000;
+                    } else {
+                        pixel[i * size + j] = 0xffffffff;
+                    }
+                }
+            }
+            bitmap.setPixels(pixel, 0, size, 0, 0, size, size);
+            return bitmap;
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Bitmap createQRCodewithLogo(String text, int version, Bitmap logo) {
+        if (version <= 0) {
+            throw new RuntimeException("QRCode version need >= 1");
+        }
+        int size = (version - 1) * 4 + 21;
+        int logoSize = size / 10;//??
+        Hashtable<EncodeHintType, Object> hints = new Hashtable<>();
+        hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+        QRCodeWriter qrCodeWriter = new QRCodeWriter();
+        try {
+            BitMatrix bitMatrix = qrCodeWriter.encode(text, BarcodeFormat.QR_CODE, size, size, hints);
+            int matrixWidth = bitMatrix.getWidth();
+            int matrixHeight = bitMatrix.getHeight();
+            int halfwidth = matrixWidth / 2;
+            int halfheight = matrixHeight / 2;
+            Matrix m = new Matrix();
+            float sx = (float) 2 * logoSize / logo.getWidth();
+            float sy = (float) 2 * logoSize / logo.getHeight();
+            m.setScale(sx, sy);
+            Bitmap logoBitmap = Bitmap.createBitmap(logo, 0, 0, logo.getWidth(), logo.getHeight(), m, false);
+            int[] pixel = new int[size * size];
+            for (int i = 0; i < size; i++) {
+                for (int j = 0; j < size; j++) {
+                    if (i > halfwidth - logoSize && i < halfwidth + logoSize && j > halfheight - logoSize &&
+                            j < halfheight + logoSize) {
+                        pixel[i * size + j] = logoBitmap.getPixel(j - halfwidth + logoSize, i - halfheight + logoSize);
+                    } else {
+                        if (bitMatrix.get(i, j)) {
+                            pixel[i * size + j] = 0xff000000;
+                        } else {
+                            pixel[i * size + j] = 0xffffffff;
+                        }
+                    }
+                }
+            }
+            Bitmap returnBitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+            returnBitmap.setPixels(pixel, 0, size, 0, 0, size, size);
+            return returnBitmap;
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
+
+
+        return null;
+    }
+
+    public static int dp2px(Context context, float dp) {
+        final float density = context.getResources().getDisplayMetrics().density;
+        return (int) ((dp * density + 0.5));
+
+
+    }
+
+    public static int px2dp(Context context,float px) {
+        final float density = context.getResources().getDisplayMetrics().density;
+        return (int) (px/density+0.5);
+
+    }
 
     public boolean isNFCUseful(Context c) {
-
-//        if (!PackageManager.(PackageManager.FEATURE_NFC)) {
-//
-//        }
 
 
         return false;
     }
+
 
 
 }

@@ -19,10 +19,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.google.android.gms.gcm.GcmReceiver;
 
+import de.hdodenhof.circleimageview.CircleImageView;
 import yaoxin.example.com.popularmoves.fragment.AboutFragment;
 import yaoxin.example.com.popularmoves.fragment.CinemaFragment;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
@@ -95,8 +97,18 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
 
         mNavigationView = (NavigationView) findViewById(R.id.navigation_view);
         View headerView = mNavigationView.inflateHeaderView(R.layout.navigation_header);
+        inflateHeadView(headerView);
         mNavigationView.setNavigationItemSelectedListener(this);
         mNavigationView.setCheckedItem(R.id.movie);
+
+    }
+
+    private void inflateHeadView(View headerView) {
+        LinearLayout.LayoutParams params = (LinearLayout
+                .LayoutParams) headerView.getLayoutParams();
+        params.height = Utils.dp2px(this,200);
+        CircleImageView face = (CircleImageView) headerView.findViewById(R.id.face);
+
 
     }
 

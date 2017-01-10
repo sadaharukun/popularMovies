@@ -66,8 +66,11 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
     private static final String TAG = "DisplayFragment";
 
     private static final int REQUESTCODE_SETTINGACTIVITY = 10;
+    private static final int REQUESTCODE_DETAILACTIVITY = 11;
     private static final int RESULTCODE_SETTINGACTIVITY_SORTPOPULAR = 301;
     private static final int RESULTCODE_SETTINGACTIVITY_SORTVOTEAVERAGE = 302;
+    public static final int RESULTCODE_DETAILACTIVITY_COLLECTCHANGE = 303;
+    public static final int RESULTCODE_DETAILACTIVITY_COLLECT_NOTCHANGE = 304;
 
     private static final int LoderId = 100;
 
@@ -362,6 +365,7 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        Log.i(TAG, "resultcode==" + resultCode);
         if (resultCode == RESULTCODE_SETTINGACTIVITY_SORTPOPULAR) {//popular
             ContentResolver resolver = getActivity().getContentResolver();
             String sql = "SELECT * FROM " + MovieEntry.TABLE_NAME + "," + MovieTypeEntry.TABLENAME + " WHERE " + MovieEntry.MOVIEID
@@ -384,8 +388,23 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
             } else {
                 MovieSyncAdapter.syncImmediately(getActivity(), 1, 1);
             }
+        } else if (resultCode == RESULTCODE_DETAILACTIVITY_COLLECTCHANGE) {//movie collect change
+            Log.i(TAG, "collect change..");
+            if (!Utils.IsMovieCollected(getActivity())) {
+                getLoaderManager().restartLoader(LoderId, null, this);
+            } else {
+                ContentResolver resolver = getActivity().getContentResolver();
+                Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, CONTRACT_MOVIE_PROJECTIONS,
+                        MovieEntry.COLLECTED + "=?", new String[]{MovieEntry.MOVIE_COLLECTED}, null);
+                if (cursor != null && cursor.moveToFirst()) {
+                    mCursorAdapter.changeCursor(cursor);
+                } else {
+                    mCursorAdapter.changeCursor(null);
+                }
+            }
 
-
+        } else if (resultCode == RESULTCODE_DETAILACTIVITY_COLLECT_NOTCHANGE) {
+            //do nothing
         }
     }
 
@@ -479,7 +498,8 @@ public class DisplayFragment extends Fragment implements android.support.v4.app.
 //        cursor.close();
         Log.i(TAG, "moveCursor::" + cursor.toString());
         intent.putExtra("move", move);
-        startActivity(intent);
+//        startActivity(intent);
+        startActivityForResult(intent, REQUESTCODE_DETAILACTIVITY);
     }
 
     /**

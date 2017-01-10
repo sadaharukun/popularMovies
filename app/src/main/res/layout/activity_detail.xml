@@ -17,11 +17,9 @@
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:background="?attr/colorPrimary">
-
-
-        </android.support.v7.widget.Toolbar>
+            android:layout_height="68dp"
+            android:background="?attr/colorPrimary"
+            android:paddingTop="20dp"></android.support.v7.widget.Toolbar>
 
         <!--movieName-->
         <RelativeLayout
@@ -39,7 +37,7 @@
                 android:layout_centerVertical="true"
                 android:layout_marginLeft="10dp"
                 android:gravity="center_vertical"
-                android:textSize="20sp" />
+                android:textSize="@dimen/text_16_size" />
 
 
             <ImageView

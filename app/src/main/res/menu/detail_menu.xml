@@ -15,4 +15,10 @@
         android:orderInCategory="1"
         android:title="@string/nfc" />
 
+    <item
+        android:id="@+id/item_menu_qrCode"
+        android:icon="@mipmap/qrcode"
+        android:orderInCategory="2"
+        android:title="@string/qrcode" />
+
 </menu>

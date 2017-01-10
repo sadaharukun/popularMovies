@@ -22,6 +22,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RatingBar;
@@ -41,6 +42,9 @@ import yaoxin.example.com.popularmoves.data.VideosEntry;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.support.ReviewsAdapter;
+import yaoxin.example.com.popularmoves.utils.Utils;
+
+import static yaoxin.example.com.popularmoves.R.id.collect;
 
 /**
  * 电影详情页
@@ -106,6 +110,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     public static final int COL_REVIEWS_COMMENTS = 4;
     public static final int COL_REVIEWS_MOVEID = 5;
 
+    private String mprefavorite;
+    private String mCurrentfavorite;
 
     private Handler mHandler = new Handler() {
         @Override
@@ -125,6 +131,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         super.onCreate(savedInstanceState);
 //        supportRequestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_detail);
+        Utils.hideNavigationBar(this);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
         Log.i(TAG, "onCreate()");
         getLoaderManager().initLoader(REVIEWS_LOADER_ID, null, this);
 
@@ -133,7 +141,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mScrollview = (ScrollView) this.findViewById(R.id.scrollView);
         mToolbar = (Toolbar) this.findViewById(R.id.toolbar);
         mName = (TextView) this.findViewById(R.id.name);
-        mCollect = (ImageView) this.findViewById(R.id.collect);
+        mCollect = (ImageView) this.findViewById(collect);
         mBackDrop = (RelativeLayout) this.findViewById(R.id.backdrop);
         mBackdropImageView = (ImageView) this.findViewById(R.id.backdrop_img);
         mReleaseTime = (TextView) this.findViewById(R.id.releaseTime);
@@ -151,6 +159,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mToolbar.setNavigationIcon(R.mipmap.back);
 
         if (move != null) {
+            mprefavorite = move.getCollected();
+            mCurrentfavorite = mprefavorite;
             if (FAVORITE.equals(move.getCollected())) {
                 mCollect.setImageResource(R.mipmap.favorite);
             } else if (FAVORITE_ED.equals(move.getCollected())) {
@@ -180,6 +190,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setResult();
                 finish();
             }
         });
@@ -187,24 +198,26 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             @Override
             public void onClick(View v) {
                 if (move != null) {
-                    String collect = move.getCollected();
+//                    String collect = move.getCollected();
 
                     ContentValues values = new ContentValues();
                     ContentResolver resolver = getContentResolver();
                     String movieId = move.getMoveId();
                     Log.i(TAG, "moveId == " + move.getMoveId());
-                    if (FAVORITE.equals(collect)) {
+                    if (FAVORITE.equals(mCurrentfavorite)) {
                         values.clear();
                         values.put(MovieEntry.COLLECTED, FAVORITE_ED);
                         resolver.update(MovieContract.CONTENT_MOVE_URI, values, MovieEntry.MOVIEID + "=?",
                                 new String[]{movieId});
                         ((ImageView) v).setImageResource(R.mipmap.favorite_ed);
+                        mCurrentfavorite = FAVORITE_ED;
                     } else {
                         values.clear();
                         values.put(MovieEntry.COLLECTED, FAVORITE);
                         resolver.update(MovieContract.CONTENT_MOVE_URI, values, MovieEntry.MOVIEID + "=?",
                                 new String[]{movieId});
                         ((ImageView) v).setImageResource(R.mipmap.favorite);
+                        mCurrentfavorite = FAVORITE;
                     }
 
                 }
@@ -276,9 +289,29 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     @Override
+    protected void onStop() {
+        super.onStop();
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         Log.i(TAG, "ondestroy..");
+    }
+
+    @Override
+    public void onBackPressed() {
+        Log.i(TAG, "onbackpress..");
+        setResult();
+        super.onBackPressed();
+    }
+
+    private void setResult() {
+        if (mprefavorite.equals(mCurrentfavorite)) {
+            this.setResult(DisplayFragment.RESULTCODE_DETAILACTIVITY_COLLECT_NOTCHANGE);
+        } else {
+            this.setResult(DisplayFragment.RESULTCODE_DETAILACTIVITY_COLLECTCHANGE);
+        }
     }
 
     private void inflateData(Cursor cursor) {
@@ -325,7 +358,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         Intent shareIntent = new Intent();
         shareIntent.setAction(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
-        shareIntent.putExtra(Intent.EXTRA_TEXT, title +" "+ base_youtube_url + youtubeKey);
+        shareIntent.putExtra(Intent.EXTRA_TEXT, title + " " + base_youtube_url + youtubeKey);
         shareIntent.setType("text/plain");
         Log.i(TAG, "share click..");
         mShareActionProvider.setShareIntent(shareIntent);
@@ -349,6 +382,12 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         if (mShareActionProvider != null) {
             shareMovie();
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("currentCollect", mCurrentfavorite);
     }
 
     @Override

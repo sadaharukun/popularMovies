@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+
+        <group
+            android:id="@+id/content"
+            android:checkableBehavior="single">
+            <item
+                android:id="@+id/movie"
+                android:icon="@mipmap/movie_default"
+                android:title="@string/movie" />
+
+            <item
+                android:id="@+id/cinema"
+                android:icon="@mipmap/cinema"
+                android:title="@string/cinema" />
+        </group>
+
+        <group
+            android:id="@+id/appinfo"
+            android:checkableBehavior="single">
+
+            <item
+                android:id="@+id/drawer_about"
+                android:icon="@mipmap/about"
+                android:title="@string/about" />
+            <item
+                android:id="@+id/help"
+                android:icon="@mipmap/help"
+                android:title="@string/help" />
+
+        </group>
+
+    </group>
+</menu>

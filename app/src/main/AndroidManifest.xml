@@ -34,7 +34,8 @@
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="@string/popluarmoves">
+            android:theme="@style/AppTheme"
+            android:label="@string/movie">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

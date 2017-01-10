@@ -8,6 +8,7 @@
     <string name="menu_collected">收藏</string>
     <string name="popluarmoves">热门电影</string>
     <string name="moveDetail">电影详情</string>
+    <string name="movie">电影</string>
     <string name="setting">设置</string>
     <string name="popularMost">最受欢迎</string>
     <string name="voteMost">评分最高</string>
@@ -21,4 +22,10 @@
     <string name="loadfail">加载失败</string>
     <string name="search">搜索</string>
     <string name="menu_search_hints">搜索热门电影</string>
+    <string name="qrcode">二维码</string>
+    <string name="open_drawer">opendrawer</string>
+    <string name="close_drawer">closedrawer</string>
+    <string name="about">关于</string>
+    <string name="cinema">电影院</string>
+    <string name="help">帮助与反馈</string>
 </resources>

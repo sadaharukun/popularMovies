@@ -29,4 +29,8 @@
     <string name="cinema">电影院</string>
     <string name="help">帮助与反馈</string>
     <string name="video">预告片</string>
+    <string name="nowplaying">正在热映</string>
+    <string name="toprated">永恒经典</string>
+    <string name="popularnow">时下流行</string>
+    <string name="loginfailed">登录失败</string>
 </resources>

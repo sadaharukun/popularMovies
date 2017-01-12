@@ -6,6 +6,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.os.PersistableBundle;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentManager;
@@ -21,8 +23,13 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.gcm.GcmReceiver;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import yaoxin.example.com.popularmoves.fragment.AboutFragment;
@@ -32,12 +39,17 @@ import yaoxin.example.com.popularmoves.fragment.HelpFragment;
 import yaoxin.example.com.popularmoves.fragment.ItemFragment;
 import yaoxin.example.com.popularmoves.fragment.RefreshListener;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
+import yaoxin.example.com.popularmoves.support.AccountBean;
+import yaoxin.example.com.popularmoves.support.LoginRunnable;
+import yaoxin.example.com.popularmoves.support.ObtainAccountListener;
 import yaoxin.example.com.popularmoves.sync.MovieSyncAdapter;
 import yaoxin.example.com.popularmoves.utils.Utils;
 
 public class MainActivity extends AppCompatActivity implements ItemFragment.OnListFragmentInteractionListener, NavigationView.OnNavigationItemSelectedListener {
 
     public static final String TAG = "MainActivity";
+
+    public static final int LOGIN_SESSION = 10;
 
     private FrameLayout mContentView;
     private DrawerLayout mDrawerLayout;
@@ -55,6 +67,41 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
     private static final int REQUEST_CODE = 100;
 
     private FragmentManager manager;
+
+    Handler handler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.what == LOGIN_SESSION) {
+                if ((Boolean) msg.obj) {
+                    handleAccount(msg);
+                } else {
+                    Toast.makeText(MainActivity.this, getString(R.string.loginfailed), Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    };
+
+    private ObtainAccountListener mAccountListener;
+
+    private void handleAccount(Message msg) {
+        Bundle data = msg.getData();
+        String session_id = data.getString("session_id");
+        String accountmsg = data.getString("accountmsg");
+        try {
+            JSONObject accountJson = new JSONObject(accountmsg);
+            String name = accountJson.getString("name");
+            String username = accountJson.getString("username");
+            Boolean includeadult = accountJson.getBoolean("include_adult");
+            String id = accountJson.getString("id");
+            String hash = accountJson.getJSONObject("avatar").getJSONObject("gravatar").getString("hash");
+            AccountBean account = new AccountBean(id, hash, includeadult, name, username);
+            if (mAccountListener != null)
+                mAccountListener.obtainAccount(account);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 
     @Override
@@ -106,9 +153,42 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
     private void inflateHeadView(View headerView) {
         LinearLayout.LayoutParams params = (LinearLayout
                 .LayoutParams) headerView.getLayoutParams();
-        params.height = Utils.dp2px(this,200);
-        CircleImageView face = (CircleImageView) headerView.findViewById(R.id.face);
+        params.height = Utils.dp2px(this, 200);
+        final CircleImageView face = (CircleImageView) headerView.findViewById(R.id.face);
+        final TextView textview_name = (TextView) headerView.findViewById(R.id.name);
+        final TextView textview_username = (TextView) headerView.findViewById(R.id.username);
+        this.setAccountListener(new ObtainAccountListener() {
+            @Override
+            public void obtainAccount(AccountBean bean) {
+                textview_name.setText(bean.name);
+                textview_username.setText(bean.username);
+                face.setBackgroundResource(R.mipmap.user);
+            }
+        });
+        face.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.i(TAG, "login onclick..");
+                //8b6dba29b4719ca30943c55284acd58d5c333d95
+                loginAccountOrAccountDetail(v);
+            }
+        });
 
+
+    }
+
+    /**
+     * here is two method to login(1.developer login use apikey 2.normal user login use uesrname,password)
+     * we use the second method.
+     *
+     * @param v
+     */
+    private void loginAccountOrAccountDetail(View v) {
+        //request token  b74a4e1c05c2b424d0a53a033cb6a601cea6c0cc
+        //e6927f69fa9d576e2b1ffa9818e946b9d955190d
+        //session_id 895707742b02b294d38932be787844b9da36576f
+        LoginRunnable loginRunnable = new LoginRunnable(this, "yaoxinbeijing", "7256338", handler);
+        new Thread(loginRunnable).start();
 
     }
 
@@ -220,6 +300,10 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
 
     public void setRefreshListener(RefreshListener refreshListener) {
         this.refreshListener = refreshListener;
+    }
+
+    public void setAccountListener(ObtainAccountListener listener) {
+        this.mAccountListener = listener;
     }
 
     @Override

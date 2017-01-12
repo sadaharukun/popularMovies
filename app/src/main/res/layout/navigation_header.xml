@@ -2,16 +2,35 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="400dp"
-    android:paddingLeft="10dp"
     android:background="@color/sunshine_blue"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:paddingLeft="10dp">
 
     <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/face"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
+        android:scaleType="centerInside"
         android:src="@mipmap/default_user" />
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/face"
+        android:layout_marginTop="15dp"
+        android:textColor="@color/white_E"
+        android:textSize="@dimen/text_16_size" />
+
+    <TextView
+        android:id="@+id/username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/name"
+        android:layout_marginTop="5dp"
+        android:textColor="@color/gray_B"
+        android:textSize="@dimen/text_14_size" />
 
 
 </RelativeLayout>

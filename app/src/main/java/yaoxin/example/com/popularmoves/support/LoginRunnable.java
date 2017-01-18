@@ -44,6 +44,7 @@ public class LoginRunnable implements Runnable {
         this.username = username;
         this.password = password;
         this.handler = handler;
+        Log.i(TAG, "username=" + username + " :" + "password=" + password);
 //        params.put("username", username);
 //        params.put("password", password);
 //        params.put("request_token", "b74a4e1c05c2b424d0a53a033cb6a601cea6c0cc");

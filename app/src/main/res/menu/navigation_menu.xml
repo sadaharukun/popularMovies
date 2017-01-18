@@ -5,20 +5,40 @@
         <group
             android:id="@+id/content"
             android:checkableBehavior="single">
+
+            <item
+                android:id="@+id/nowplaying"
+                android:icon="@mipmap/nowplaying"
+                android:title="@string/nowplaying" />
             <item
                 android:id="@+id/movie"
                 android:icon="@mipmap/movie_default"
                 android:title="@string/movie" />
 
             <item
+                android:id="@+id/tvShow"
+                android:icon="@mipmap/tvshow"
+                android:title="@string/tvShow" />
+
+            <item
                 android:id="@+id/cinema"
                 android:icon="@mipmap/cinema"
                 android:title="@string/cinema" />
+
+            <item
+                android:id="@+id/popularPeople"
+                android:icon="@mipmap/popularpeople"
+                android:title="@string/popularPeople" />
         </group>
 
         <group
             android:id="@+id/appinfo"
             android:checkableBehavior="single">
+
+            <item
+                android:id="@+id/setting"
+                android:icon="@mipmap/setting"
+                android:title="@string/setting" />
 
             <item
                 android:id="@+id/drawer_about"

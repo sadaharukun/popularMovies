@@ -29,8 +29,20 @@
     <string name="cinema">电影院</string>
     <string name="help">帮助与反馈</string>
     <string name="video">预告片</string>
-    <string name="nowplaying">正在热映</string>
+    <string name="nowplaying">时下流行</string>
     <string name="toprated">永恒经典</string>
-    <string name="popularnow">时下流行</string>
-    <string name="loginfailed">登录失败</string>
+    <string name="loginfailed">登录失败,请重新登录</string>
+    <string name="tvShow">TV Show</string>
+    <string name="popularPeople">Popular People</string>
+    <string name="username">用户名</string>
+    <string name="password">密码</string>
+    <string name="signin">登录</string>
+    <string name="cancel">取消</string>
+    <string name="usernamecannotnull">用户名不能为空</string>
+    <string name="passwordcannotnull">密码不能为空</string>
+    <string name="editvatar">编辑头像</string>
+    <string name="takepicture">拍照</string>
+    <string name="chosealbum">从相册中选择</string>
+    <string name="sure">确定</string>
+
 </resources>

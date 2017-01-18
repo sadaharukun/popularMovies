@@ -4,13 +4,20 @@ import android.app.Activity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.support.v4.app.NotificationCompat;
+import android.support.v7.app.AlertDialog;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +32,9 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Hashtable;
 
 import yaoxin.example.com.popularmoves.MainActivity;
@@ -269,10 +279,101 @@ public class Utils {
 
     }
 
-    public static int px2dp(Context context,float px) {
+    public static int px2dp(Context context, float px) {
         final float density = context.getResources().getDisplayMetrics().density;
-        return (int) (px/density+0.5);
+        return (int) (px / density + 0.5);
 
+    }
+
+    /**
+     * 图片存储到系统相册
+     *
+     * @param context
+     * @param source
+     * @param title
+     * @param description
+     * @return
+     */
+    public static String caputrePhotoUtils(Context context, Bitmap source, String title, String description) throws IOException {
+        ContentResolver resolver = context.getContentResolver();
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, title);
+        values.put(MediaStore.Images.Media.DESCRIPTION, description);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        Uri uri = null;
+        String uristr = null;
+        OutputStream outputStream = null;
+        if (source != null) {
+            uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+            try {
+                outputStream = resolver.openOutputStream(uri);
+                source.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                outputStream.close();
+            }
+
+            long id = ContentUris.parseId(uri);
+            // Wait until MINI_KIND thumbnail is generated.
+            Bitmap miniThumb = MediaStore.Images.Thumbnails.getThumbnail(resolver, id,
+                    MediaStore.Images.Thumbnails.MINI_KIND, null);
+            // This is for backward compatibility.
+            Bitmap microThumb = StoreThumbnail(resolver, miniThumb, id, 50F, 50F,
+                    MediaStore.Images.Thumbnails.MICRO_KIND);
+        } else {
+            resolver.delete(uri, null, null);
+            uri = null;
+        }
+
+        if (uri != null) {
+            uristr = uri.toString();
+        }
+        return uristr;
+    }
+
+    private final static Bitmap StoreThumbnail(ContentResolver cr, Bitmap source, long id, float width, float height, int kind) {
+
+        Matrix matrix = new Matrix();
+
+        float scaleX = width / source.getWidth();
+        float scaleY = height / source.getHeight();
+
+        matrix.setScale(scaleX, scaleY);
+
+        Bitmap thumb = Bitmap.createBitmap(source, 0, 0,
+                source.getWidth(),
+                source.getHeight(), matrix,
+                true);
+
+        ContentValues values = new ContentValues(4);
+        values.put(MediaStore.Images.Thumbnails.KIND, kind);
+        values.put(MediaStore.Images.Thumbnails.IMAGE_ID, (int) id);
+        values.put(MediaStore.Images.Thumbnails.HEIGHT, thumb.getHeight());
+        values.put(MediaStore.Images.Thumbnails.WIDTH, thumb.getWidth());
+
+        Uri url = cr.insert(MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, values);
+
+        try {
+            OutputStream thumbOut = cr.openOutputStream(url);
+
+            thumb.compress(Bitmap.CompressFormat.JPEG, 100, thumbOut);
+            thumbOut.close();
+            return thumb;
+        } catch (FileNotFoundException ex) {
+            return null;
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+
+    public static AlertDialog showWarnMsg(Activity activity, String warnMsg, String positiveButtonText, DialogInterface.OnClickListener listener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+        builder.setMessage(warnMsg);
+        builder.setPositiveButton(positiveButtonText, listener);
+        builder.setCancelable(true);
+        return builder.create();
     }
 
     public boolean isNFCUseful(Context c) {
@@ -280,7 +381,6 @@ public class Utils {
 
         return false;
     }
-
 
 
 }

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:id="@+id/activity_popular_people_detail"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="yaoxin.example.com.popularmoves.PopularPeopleDetailActivity">
+
+        <!--android:background="?attr/colorPrimary"-->
+
+        <ImageView
+            android:id="@+id/people_poster"
+            android:layout_width="match_parent"
+            android:scaleType="centerCrop"
+            android:layout_height="wrap_content" />
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="68dp"
+            android:paddingTop="20dp"
+            android:background="@android:color/transparent"
+            android:gravity="center_vertical"></android.support.v7.widget.Toolbar>
+
+
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/face"
+            android:layout_width="wrap_content"
+
+            />
+
+    </RelativeLayout>
+</ScrollView>

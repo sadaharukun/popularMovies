@@ -382,5 +382,11 @@ public class Utils {
         return false;
     }
 
+    public static String zipcompress(String source) {
+
+
+        return null;
+    }
+
 
 }

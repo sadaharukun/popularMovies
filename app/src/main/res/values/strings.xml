@@ -13,6 +13,7 @@
     <string name="popularMost">最受欢迎</string>
     <string name="voteMost">评分最高</string>
     <string name="pleaseOnline">请先连接网络</string>
+    <string name="todaybest">今日最佳</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -44,5 +45,7 @@
     <string name="takepicture">拍照</string>
     <string name="chosealbum">从相册中选择</string>
     <string name="sure">确定</string>
+    <string name="home">主页</string>
+    <string name="viewonImdb">在imdb上查看</string>
 
 </resources>

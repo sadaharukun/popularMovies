@@ -2,10 +2,12 @@ package yaoxin.example.com.popularmoves;
 
 import android.Manifest;
 import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
@@ -50,11 +52,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import de.hdodenhof.circleimageview.CircleImageView;
+import yaoxin.example.com.popularmoves.data.MovieContract;
+import yaoxin.example.com.popularmoves.data.MovieEntry;
 import yaoxin.example.com.popularmoves.fragment.AboutFragment;
 import yaoxin.example.com.popularmoves.fragment.CinemaFragment;
 import yaoxin.example.com.popularmoves.fragment.DisplayFragment;
 import yaoxin.example.com.popularmoves.fragment.HelpFragment;
 import yaoxin.example.com.popularmoves.fragment.ItemFragment;
+import yaoxin.example.com.popularmoves.fragment.PopularPeopleFragment;
 import yaoxin.example.com.popularmoves.fragment.RefreshListener;
 import yaoxin.example.com.popularmoves.fragment.bean.Move;
 import yaoxin.example.com.popularmoves.support.AccountBean;
@@ -163,8 +168,8 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         transaction.replace(R.id.frame_content, fragment, MOVIEFRAGMENT);
         transaction.commit();
 
-        Utils.getInstance().showMovieNotification(this, getString(R.string.app_name), "this is a test",
-                R.mipmap.moive, R.mipmap.moive, "ticker ticker", 2);
+
+        showNotification();
 
 
         mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, mToobar, R.string.open_drawer, R.string.close_drawer) {
@@ -185,6 +190,26 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
         inflateHeadView(headerView);
         mNavigationView.setNavigationItemSelectedListener(this);
         mNavigationView.setCheckedItem(R.id.movie);
+
+    }
+
+    private void showNotification() {
+        new Thread() {
+            @Override
+            public void run() {
+                super.run();
+                ContentResolver resolver = getContentResolver();
+                Cursor cursor = resolver.query(MovieContract.CONTENT_MOVE_URI, new String[]{MovieEntry.TITLE}, null, null, MovieEntry.VOTEAVERAGE_SORT_ORDER);
+                String title = "";
+                if (cursor != null && cursor.moveToFirst()) {
+                    title = cursor.getString(0);
+                } else {
+                    title = "unknown";
+                }
+                Utils.getInstance().showMovieNotification(MainActivity.this, getString(R.string.todaybest), title,
+                        R.mipmap.moive, R.mipmap.moive, "ticker ticker", 2);
+            }
+        }.start();
 
     }
 
@@ -638,6 +663,13 @@ public class MainActivity extends AppCompatActivity implements ItemFragment.OnLi
                 mToobar.setTitle(getString(R.string.help));
                 HelpFragment helpFragment = new HelpFragment();
                 transaction.replace(R.id.frame_content, helpFragment);
+                transaction.addToBackStack(null);
+                transaction.commit();
+                return true;
+            case R.id.popularPeople:
+                mToobar.setTitle(R.string.popularPeople);
+                PopularPeopleFragment popularpeoplefragment = new PopularPeopleFragment();
+                transaction.replace(R.id.frame_content, popularpeoplefragment);
                 transaction.addToBackStack(null);
                 transaction.commit();
                 return true;
